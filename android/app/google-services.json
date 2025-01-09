@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "700441439019",
+    "project_id": "yemekye-6fbc4",
+    "storage_bucket": "yemekye-6fbc4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:700441439019:android:ed994e292abb2a75f4f36e",
+        "android_client_info": {
+          "package_name": "com.example.yemekye"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB3VL_y6YRdmp4Ts-1cf8Szw8EqcrA9S18"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
