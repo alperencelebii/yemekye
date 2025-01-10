@@ -14,6 +14,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      title: 'YemekYe',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
       home: AuthStateHandler(),
     );
   }
@@ -25,13 +30,25 @@ class AuthStateHandler extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        // Yükleniyor durumu
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasData) {
-          // Buradaki yazım hatası düzeltildi
-          return HomeScreen(); // Oturum açık ise ana sayfaya yönlendirilir
+          return Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        // Hata varsa, hata mesajı göster
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(child: Text('Bir hata oluştu: ${snapshot.error}')),
+          );
+        }
+
+        // Kullanıcı oturum açmışsa, ana sayfaya yönlendir
+        if (snapshot.hasData) {
+          return HomeScreen();
         } else {
-          return LoginPage(); // Oturum kapalı ise giriş sayfasına yönlendirilir
+          return LoginPage();
         }
       },
     );
