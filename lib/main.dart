@@ -3,13 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:yemekye/loginregister/login.dart';
 import 'package:yemekye/screens/homepage.dart';
+import 'package:yemekye/screens/restaurant_details.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(MyApp());
 }
-
+// ekmek turuncusu
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -46,7 +47,7 @@ class AuthStateHandler extends StatelessWidget {
 
         // Kullanıcı oturum açmışsa, ana sayfaya yönlendir
         if (snapshot.hasData) {
-          return HomeScreen();
+          return RestaurantDetails();
         } else {
           return LoginPage();
         }

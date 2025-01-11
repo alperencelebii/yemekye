@@ -43,7 +43,7 @@ class RestaurantListCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Text(
-              'Aspava Döner',
+              'Şimşek Aspava',
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             _buildRating(),
@@ -74,7 +74,7 @@ class RestaurantListCard extends StatelessWidget {
         Text(
           '4.7 (5645)',
           style: TextStyle(
-              fontSize: 11,
+              fontSize: 9,
               fontWeight: FontWeight.bold,
               color: Color(0xFF0E0D0D)),
         ),
