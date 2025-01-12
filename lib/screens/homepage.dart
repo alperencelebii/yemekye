@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:yemekye/components/models/product_card.dart';
 import 'package:yemekye/components/models/restaurant_list_card.dart';
 import 'package:yemekye/components/models/yatay_restaurant_card.dart';
+import 'package:yemekye/screens/restaurant_details.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,9 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: SvgPicture.asset(
                 'assets/icons/Vector.svg',
-
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => RestaurantDetails()));
+              },
             ),
           ],
         ),
@@ -137,17 +143,21 @@ class _HomeScreenState extends State<HomeScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 8),
                         decoration: BoxDecoration(
-                          color: isActive ? const Color(0xFFF9A602) : Colors.white,
+                          color:
+                              isActive ? const Color(0xFFF9A602) : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.1), // Kerning line color
+                            color: const Color.fromARGB(255, 0, 0, 0)
+                                .withOpacity(0.1), // Kerning line color
                             width: 1.5, // Kerning line width
                           ),
                         ),
                         child: Text(
                           categories[index],
                           style: TextStyle(
-                            color: isActive ? Color(0xFF1D1D1D): Color(0xFF1D1D1D),
+                            color: isActive
+                                ? Color(0xFF1D1D1D)
+                                : Color(0xFF1D1D1D),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -200,14 +210,21 @@ class _HomeScreenState extends State<HomeScreen> {
                     scrollDirection: Axis.horizontal,
                     child: Column(
                       children: List.generate(
-                        4, // Kaç adet kart oluşturulacak
+                        4,
                         (index) => Padding(
                           padding: const EdgeInsets.only(right: 8.0),
                           child: YatayRestaurantCard(),
                         ),
-                      )..insertAll(1, List.generate(3, (index) => const SizedBox(height: 5,))), // Aralara SizedBox ekleniyor
+                      )..insertAll(
+                          1,
+                          List.generate(
+                              3,
+                              (index) => const SizedBox(
+                                    height: 5,
+                                  ))), // Aralara SizedBox ekleniyor
                     ),
                   ),
+                  ProductCard(),
                 ],
               ),
             ],

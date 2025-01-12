@@ -10,6 +10,7 @@ void main() async {
   await Firebase.initializeApp();
   runApp(MyApp());
 }
+
 // ekmek turuncusu
 class MyApp extends StatelessWidget {
   @override
@@ -47,7 +48,7 @@ class AuthStateHandler extends StatelessWidget {
 
         // Kullanıcı oturum açmışsa, ana sayfaya yönlendir
         if (snapshot.hasData) {
-          return RestaurantDetails();
+          return HomeScreen();
         } else {
           return LoginPage();
         }
