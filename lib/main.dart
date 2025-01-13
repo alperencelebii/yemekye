@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:yemekye/deneme.dart';
 import 'package:yemekye/loginregister/login.dart';
 import 'package:yemekye/screens/homepage.dart';
 import 'package:yemekye/screens/restaurant_details.dart';
@@ -48,7 +49,7 @@ class AuthStateHandler extends StatelessWidget {
 
         // Kullanıcı oturum açmışsa, ana sayfaya yönlendir
         if (snapshot.hasData) {
-          return HomeScreen();
+          return MapScreen();
         } else {
           return LoginPage();
         }
