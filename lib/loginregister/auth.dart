@@ -59,6 +59,8 @@ class AuthService {
 
   //facebook ile giriş fonksiyonu
   Future<UserCredential?> signInWithFacebook() async {
+    return null;
+  
     // final LoginResult result = await FacebookAuth.instance.login();
     //  print("RESULT : ${result.message}");
     // if (result.status == LoginStatus.success) {
