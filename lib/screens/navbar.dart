@@ -29,10 +29,10 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
 
   final List<Widget> _pages = [
     HomeScreen(),
-    RestaurantDetails(),
-    RestaurantDetails(),
-    RestaurantDetails(),
-    RestaurantDetails(),
+    HomeScreen(),
+    HomeScreen(),
+    HomeScreen(),
+    HomeScreen(),
   ];
 
   @override

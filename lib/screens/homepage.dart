@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:yemekye/components/models/product_card.dart';
@@ -205,25 +206,77 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Column(
-                      children: List.generate(
-                        4,
-                        (index) => Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: YatayRestaurantCard(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Popüler Restoranlar',
+                        style: TextStyle(
+                          fontFamily: 'BeVietnamPro',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
                         ),
-                      )..insertAll(
-                          1,
-                          List.generate(
-                              3,
-                              (index) => const SizedBox(
-                                    height: 5,
-                                  ))), // Aralara SizedBox ekleniyor
-                    ),
+                      ),
+                      const SizedBox(height: 10),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('shops')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          }
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return const Text('Restoran bulunamadı.');
+                          }
+
+                          final shopDocs = snapshot.data!.docs;
+
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: shopDocs.length,
+                            itemBuilder: (context, index) {
+                              final shopData = shopDocs[index];
+                              final shopName =
+                                  shopData['name'] ?? 'Mağaza Adı Yok';
+                              final shopAddress =
+                                  shopData['address'] ?? 'Adres Bilgisi Yok';
+
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Card(
+                                  elevation: 2,
+                                  child: ListTile(
+                                    title: Text(shopName,
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold)),
+                                    subtitle: Text(shopAddress),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              RestaurantDetails(
+                                            shopName: shopName,
+                                            shopAddress: shopAddress,
+                                          ),
+                                        ),
+                                      );
+                                      // Restoran detaylarına git
+                                    },
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  ProductCard(),
                 ],
               ),
             ],

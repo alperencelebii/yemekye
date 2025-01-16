@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
 class ProductCard extends StatelessWidget {
-  const ProductCard({Key? key}) : super(key: key);
+  final String productName;
+  final double productPrice;
+  final int piece;
+
+  const ProductCard({
+    Key? key,
+    required this.productName,
+    required this.productPrice,
+    required this.piece,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +31,7 @@ class ProductCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            SizedBox(
-              width: 10,
-            ),
+            const SizedBox(width: 10),
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: ClipRRect(
@@ -37,23 +44,23 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Elmalı Turta',
-                    style: TextStyle(
+                    productName, // Ürün adı
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                       fontFamily: 'BeVietnamPro',
                       color: Color(0xFF353535),
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    "₺100.00",
+                    "₺${productPrice.toStringAsFixed(2)}", // Ürün fiyatı
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -63,35 +70,33 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Text(
-              '5 Adet Kaldı',
-              style: TextStyle(
+              '$piece Adet Kaldı', // Stok adedi
+              style: const TextStyle(
                 fontFamily: 'BeVietnamPro',
                 fontSize: 13,
                 color: Color(0xFF353535),
               ),
             ),
-            SizedBox(
-              width: 8,
-            ),
+            const SizedBox(width: 8),
             GestureDetector(
               onTap: () {
-                // Sabit onTap fonksiyonu
+                // Detaylara yönlendirme
                 print("Detaya git");
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: Color(0xFF1D1D1D),
+                  color: const Color(0xFF1D1D1D),
                   borderRadius: BorderRadius.circular(50),
                 ),
                 width: 40,
                 height: 40,
-                child: Icon(
+                child: const Icon(
                   Icons.arrow_forward,
                   color: Colors.white,
                 ),
               ),
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
           ],
         ),
       ),

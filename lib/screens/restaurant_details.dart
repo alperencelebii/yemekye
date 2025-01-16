@@ -1,47 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:yemekye/components/models/product_card.dart';
 
-class RestaurantDetails extends StatefulWidget {
-  @override
-  _RestaurantDetailsState createState() => _RestaurantDetailsState();
-}
+class RestaurantDetails extends StatelessWidget {
+  final String shopName;
+  final String shopAddress;
 
-class _RestaurantDetailsState extends State<RestaurantDetails> {
-  bool _isLiked = false;
+  const RestaurantDetails({
+    Key? key,
+    required this.shopName,
+    required this.shopAddress,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Arka plandaki resim
+          // Arka plan resmi
           Container(
-            height: MediaQuery.of(context).size.height *
-                0.4, // Ekranın %40'ını kaplar
+            height: MediaQuery.of(context).size.height * 0.4,
             width: double.infinity,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    'assets/images/rest.jpg'), // Resim dosyasını ekle
+                image: AssetImage('assets/images/rest.jpg'),
                 fit: BoxFit.cover,
               ),
             ),
           ),
-          // Beyaz container kısmı
+          // Beyaz alt panel
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
-              height: MediaQuery.of(context).size.height *
-                  0.65, // Ekranın alt %65'ini kaplar
+              height: MediaQuery.of(context).size.height * 0.65,
               width: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(30),
                   topRight: Radius.circular(30),
                 ),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
               child: SingleChildScrollView(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -51,86 +51,138 @@ class _RestaurantDetailsState extends State<RestaurantDetails> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          "Coffe House",
-                          style: TextStyle(
+                          shopName,
+                          style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'BeVietnamPro',
                           ),
                         ),
                         Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                _isLiked
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: _isLiked ? Colors.red : Colors.black,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _isLiked = !_isLiked;
-                                });
-                              },
-                            ),
-                            IconButton(
-                              icon: Icon(Icons.more_horiz),
-                              color: Color(0xFF1D1D1D),
-                              onPressed: () {},
-                            ),
+                          children: const [
+                            Icon(Icons.favorite_border, color: Colors.black),
+                            Icon(Icons.more_horiz, color: Color(0xFF1D1D1D)),
                           ],
                         ),
                       ],
                     ),
-                    SizedBox(height: 8),
-                    Row(),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
-                        Icon(Icons.location_on, color: Color(0xFF22BA61)),
-                        SizedBox(width: 4),
-                        Container(
-                          width: 220, // Genişliği sınırlandırın
+                        const Icon(Icons.location_on, color: Color(0xFF22BA61)),
+                        const SizedBox(width: 4),
+                        Expanded(
                           child: Text(
-                            "Beyazıt, 9 Mayıs 90 Cd. 20/A, 06750 Akyurt/Ankara",
-                            style: TextStyle(
-                              fontSize: 14,
-                            ),
-                            softWrap: true, // Satır kırılmasını etkinleştirir
-                            overflow: TextOverflow
-                                .visible, // Metnin görünürlüğünü ayarlar
+                            shopAddress,
+                            style: const TextStyle(fontSize: 14),
+                            softWrap: true,
+                            overflow: TextOverflow.visible,
                           ),
                         ),
-                        GestureDetector(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            width: 28,
-                            height: 28,
-                            child: Icon(
-                              Icons.arrow_forward,
-                              color: Colors.white,
-                              size: 23,
-                            ),
-                          ),
-                        ),
-                        Spacer(),
-                        Text(""),
                       ],
                     ),
-                    SizedBox(height: 16),
-                    Text(
-                      ' Pastalar',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'BeVietnamPro',
-                      ),
-                    ),
+                    const SizedBox(height: 16),
 
-                    ProductCard(),
+                    // Dinamik Kategoriler ve Ürünler
+                    FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      future: FirebaseFirestore.instance
+                          .collection('shops')
+                          .where('name', isEqualTo: shopName)
+                          .get()
+                          .then((snapshot) {
+                        if (snapshot.docs.isNotEmpty) {
+                          return snapshot.docs.first; // Sadece ilk döküman
+                        } else {
+                          throw Exception('Mağaza bulunamadı.');
+                        }
+                      }),
+                      builder: (context, shopSnapshot) {
+                        if (shopSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+
+                        if (!shopSnapshot.hasData ||
+                            shopSnapshot.data == null) {
+                          return const Text('Mağaza bulunamadı.');
+                        }
+
+                        // `productid` listesini alın
+                        final productIds = List<String>.from(
+                            shopSnapshot.data!.data()?['productid'] ?? []);
+
+                        if (productIds.isEmpty) {
+                          return const Text('Bu mağazada ürün bulunamadı.');
+                        }
+
+                        // Ürünleri çekmek için bir FutureBuilder ekleyin
+                        return FutureBuilder<QuerySnapshot>(
+                          future: FirebaseFirestore.instance
+                              .collection('products')
+                              .where(FieldPath.documentId, whereIn: productIds)
+                              .get(),
+                          builder: (context, productSnapshot) {
+                            if (productSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+
+                            if (!productSnapshot.hasData ||
+                                productSnapshot.data!.docs.isEmpty) {
+                              return const Text('Ürün bulunamadı.');
+                            }
+
+                            // Ürünleri kategorilere göre gruplama
+                            final products = productSnapshot.data!.docs;
+                            final Map<String, List<QueryDocumentSnapshot>>
+                                categories = {};
+
+                            for (var product in products) {
+                              final category =
+                                  product['category'] ?? 'Kategori Yok';
+                              if (!categories.containsKey(category)) {
+                                categories[category] = [];
+                              }
+                              categories[category]!.add(product);
+                            }
+
+                            // Gruplamayı gösterme
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: categories.entries.map((entry) {
+                                final category = entry.key;
+                                final categoryProducts = entry.value;
+
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      category,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: 'BeVietnamPro',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    ...categoryProducts.map((product) {
+                                      return ProductCard(
+                                        productName: product['name'],
+                                        productPrice: product['price'],
+                                        piece: product['piece'],
+                                      );
+                                    }).toList(),
+                                  ],
+                                );
+                              }).toList(),
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ],
                 ),
               ),
