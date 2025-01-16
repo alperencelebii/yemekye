@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'productsadd.dart';
-import 'myproducts.dart';
+import 'package:yemekye/screens/addproduct.dart';
+import 'package:yemekye/adminpanel/myProducts.dart';
+
 import 'shopsettings.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -21,11 +22,13 @@ class _AdminPanelState extends State<AdminPanel> {
         leading: IconButton(
           icon: Icon(Icons.menu), // Sol üstteki 3 çizgi
           onPressed: () {
-            _scaffoldKey.currentState?.openDrawer(); // GlobalKey ile Drawer açma
+            _scaffoldKey.currentState
+                ?.openDrawer(); // GlobalKey ile Drawer açma
           },
         ),
       ),
-      drawer: Drawer( // Sidebar menüsü
+      drawer: Drawer(
+        // Sidebar menüsü
         child: ListView(
           children: [
             ListTile(
@@ -39,7 +42,8 @@ class _AdminPanelState extends State<AdminPanel> {
               title: Text("Ayarlar"),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => ShopSettings()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => ShopSettings()));
               },
             ),
           ],
@@ -106,7 +110,7 @@ class _AdminPanelState extends State<AdminPanel> {
                 onTap: () {
                   Navigator.pop(context);
                   Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ProductAdds()));
+                      MaterialPageRoute(builder: (context) => AddProduct()));
                 },
               ),
               ListTile(
