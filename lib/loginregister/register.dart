@@ -15,8 +15,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _passwordAgainController =
       TextEditingController();
-  final TextEditingController _phoneNumberController =
-      TextEditingController(); // Telefon numarası için kontrolcü
+  final TextEditingController _phoneNumberController = TextEditingController();
+  final TextEditingController _shopIdController =
+      TextEditingController(); // Mağaza ID'si için
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CollectionReference usersCollection =
@@ -64,6 +65,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         _buildTextField(_passwordAgainController, Icons.vpn_key,
                             'Parola Tekrar',
                             isPassword: true),
+                        _buildShopIdField(), // Mağaza ID'si alanı
                         SizedBox(
                           height: size.height * 0.08,
                         ),
@@ -174,19 +176,26 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  Widget _buildShopIdField() {
+    return _buildTextField(
+        _shopIdController, Icons.store, 'Mağaza ID'); // Mağaza ID alanı
+  }
+
   void _registerUser() async {
     String name = _nameController.text.trim();
     String username = _usernameController.text.trim();
     String email = _emailController.text.trim();
     String password = _passwordController.text.trim();
     String passwordAgain = _passwordAgainController.text.trim();
-    String phoneNumber = _phoneNumberController.text.trim(); // Telefon numarası
+    String phoneNumber = _phoneNumberController.text.trim();
+    String shopId = _shopIdController.text.trim(); // Mağaza ID'si
 
     if (name.isEmpty ||
         username.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
-        passwordAgain.isEmpty) {
+        passwordAgain.isEmpty ||
+        shopId.isEmpty) {
       _showErrorMessage("Tüm alanları doldurun");
       return;
     }
@@ -197,21 +206,33 @@ class _RegisterPageState extends State<RegisterPage> {
     }
 
     try {
+      // Firestore'dan Mağazayı Kontrol Et
+      DocumentSnapshot shopDoc = await FirebaseFirestore.instance
+          .collection('shops')
+          .doc(shopId)
+          .get();
+      if (!shopDoc.exists) {
+        _showErrorMessage("Geçersiz Mağaza ID'si");
+        return;
+      }
+
+      // Firebase Authentication ile Kullanıcıyı Kaydet
       UserCredential userCredential =
           await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Kullanıcıyı Firestore'a kaydet
+      // Kullanıcıyı Firestore'a Kaydet
       await usersCollection.doc(userCredential.user!.uid).set({
         'name': name,
         'username': username,
         'email': email,
-        'phoneNumber': phoneNumber, // Firestore'a telefon numarasını ekle
+        'phoneNumber': phoneNumber,
+        'shopid': shopId, // Kullanıcının bağlı olduğu mağaza ID'si
       });
 
-      // Başarılı kayıt işlemi sonrasında, kullanıcıyı giriş sayfasına yönlendirin
+      // Başarılı kayıt sonrasında Login sayfasına yönlendirme
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -219,7 +240,6 @@ class _RegisterPageState extends State<RegisterPage> {
         ),
       );
     } catch (e) {
-      // Kayıt işlemi sırasında bir hata oluştuğunda burada işlemleri gerçekleştirin
       _showErrorMessage("Kayıt sırasında bir hata oluştu: $e");
     }
   }
