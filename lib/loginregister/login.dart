@@ -5,6 +5,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:yemekye/loginregister/auth.dart';
 import 'package:yemekye/loginregister/register.dart';
 import 'package:yemekye/screens/homepage.dart';
+import 'package:yemekye/screens/navbar.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -180,8 +181,8 @@ class _LoginPageState extends State<LoginPage> with WidgetsBindingObserver {
         .signIn(_emailController.text, _passwordController.text)
         .then((value) {
       if (value != null) {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        Navigator.push(context,
+            MaterialPageRoute(builder: (context) => ExpandableNavbar()));
       } else {
         _buildErrorMessage("Giriş başarısız oldu");
       }

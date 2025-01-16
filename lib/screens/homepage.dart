@@ -3,6 +3,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:yemekye/components/models/product_card.dart';
 import 'package:yemekye/components/models/restaurant_list_card.dart';
 import 'package:yemekye/components/models/yatay_restaurant_card.dart';
+import 'package:yemekye/screens/addproduct.dart';
+
 import 'package:yemekye/screens/restaurant_details.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -53,10 +55,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 'assets/icons/Vector.svg',
               ),
               onPressed: () {
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => RestaurantDetails()));
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => AddProduct()));
               },
             ),
           ],

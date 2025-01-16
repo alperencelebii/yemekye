@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:yemekye/loginregister/login.dart';
+import 'package:yemekye/loginregister/shop_register.dart';
 
 class RegisterPage extends StatefulWidget {
   @override
@@ -27,111 +28,152 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     return Scaffold(
-      body: Stack(
-        children: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
-              child: Container(
-                height: size.height * .7,
-                width: size.width * .85,
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(.75),
-                  borderRadius: BorderRadius.all(Radius.circular(20)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(.75),
-                      blurRadius: 10,
-                      spreadRadius: 2,
-                    )
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _buildTextField(
-                            _nameController, Icons.person, 'Ad Soyad'),
-                        _buildTextField(
-                            _usernameController, Icons.person, 'Kullanıcı Adı'),
-                        _buildTextField(_emailController, Icons.mail, 'E-Mail'),
-                        _buildTextField(_phoneNumberController, Icons.phone,
-                            'Telefon Numarası'),
-                        _buildTextField(
-                            _passwordController, Icons.vpn_key, 'Parola',
-                            isPassword: true),
-                        _buildTextField(_passwordAgainController, Icons.vpn_key,
-                            'Parola Tekrar',
-                            isPassword: true),
-                        _buildShopIdField(), // Mağaza ID'si alanı
-                        SizedBox(
-                          height: size.height * 0.08,
-                        ),
-                        InkWell(
-                          onTap: () {
-                            _registerUser();
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 5),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.white, width: 2),
-                              borderRadius:
-                                  BorderRadius.all(Radius.circular(30)),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(5.0),
-                              child: Center(
-                                child: Text(
-                                  "Kaydet",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 20,
+      body: SingleChildScrollView(
+        // Kaydırılabilir alan
+        child: Stack(
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                child: Container(
+                  height: size.height *
+                      .85, // Yüksekliği biraz arttırarak sığmama sorununu çözelim
+                  width: size.width * .85,
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(.75),
+                    borderRadius: BorderRadius.all(Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(.75),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      )
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildTextField(
+                              _nameController, Icons.person, 'Ad Soyad'),
+                          _buildTextField(_usernameController, Icons.person,
+                              'Kullanıcı Adı'),
+                          _buildTextField(
+                              _emailController, Icons.mail, 'E-Mail'),
+                          _buildTextField(_phoneNumberController, Icons.phone,
+                              'Telefon Numarası'),
+                          _buildTextField(
+                              _passwordController, Icons.vpn_key, 'Parola',
+                              isPassword: true),
+                          _buildTextField(_passwordAgainController,
+                              Icons.vpn_key, 'Parola Tekrar',
+                              isPassword: true),
+                          _buildShopIdField(), // Mağaza ID'si alanı
+                          SizedBox(
+                            height: size.height * 0.08,
+                          ),
+                          InkWell(
+                            onTap: () {
+                              _registerUser();
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 5),
+                              decoration: BoxDecoration(
+                                border:
+                                    Border.all(color: Colors.white, width: 2),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(30)),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(5.0),
+                                child: Center(
+                                  child: Text(
+                                    "Kaydet",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                          SizedBox(
+                            height: size.height * 0.05,
+                          ),
+                          // Mağaza oluşturma butonu
+                          InkWell(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CreateShopPage(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: EdgeInsets.symmetric(vertical: 5),
+                              decoration: BoxDecoration(
+                                border:
+                                    Border.all(color: Colors.white, width: 2),
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(30)),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(5.0),
+                                child: Center(
+                                  child: Text(
+                                    "Mağaza Oluştur",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding:
-                EdgeInsets.only(top: size.height * .06, left: size.width * .02),
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back_ios_outlined,
-                      color: Colors.blue.withOpacity(.75),
-                      size: 26,
+            Padding(
+              padding: EdgeInsets.only(
+                  top: size.height * .06, left: size.width * .02),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(
+                        Icons.arrow_back_ios_outlined,
+                        color: Colors.blue.withOpacity(.75),
+                        size: 26,
+                      ),
                     ),
-                  ),
-                  SizedBox(
-                    width: size.width * 0.3,
-                  ),
-                  Text(
-                    "Kayıt ol",
-                    style: TextStyle(
-                      fontSize: 20,
-                      color: Colors.blue.withOpacity(.75),
-                      fontWeight: FontWeight.bold,
+                    SizedBox(
+                      width: size.width * 0.3,
                     ),
-                  )
-                ],
+                    Text(
+                      "Kayıt ol",
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.blue.withOpacity(.75),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )
+                  ],
+                ),
               ),
-            ),
-          )
-        ],
+            )
+          ],
+        ),
       ),
     );
   }
@@ -230,6 +272,11 @@ class _RegisterPageState extends State<RegisterPage> {
         'email': email,
         'phoneNumber': phoneNumber,
         'shopid': shopId, // Kullanıcının bağlı olduğu mağaza ID'si
+      });
+
+      // Mağaza ID'sine kullanıcının ID'sini ekle
+      await FirebaseFirestore.instance.collection('shops').doc(shopId).update({
+        'users': FieldValue.arrayUnion([userCredential.user!.uid]),
       });
 
       // Başarılı kayıt sonrasında Login sayfasına yönlendirme
