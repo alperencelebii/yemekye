@@ -74,6 +74,11 @@ class _AddProductState extends State<AddProduct> {
         'productid': productId,
       });
 
+      // shop koleksiyonunda ilgili mağazanın productid listesine ürünü ekle
+      await _firestore.collection('shops').doc(shopId).update({
+        'productid': FieldValue.arrayUnion([productId]),
+      });
+
       _showSuccessMessage("Ürün başarıyla eklendi!");
       Navigator.pop(context); // Kullanıcıyı önceki ekrana yönlendir
     } catch (e) {
