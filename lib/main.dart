@@ -12,7 +12,10 @@ void main() async {
   await Firebase.initializeApp();
   runApp(MyApp());
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5013b34a7db424f7112a6906a70fb29f1f2f6af7
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {

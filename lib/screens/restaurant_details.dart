@@ -117,7 +117,7 @@ class _RestaurantDetailsState extends State<RestaurantDetails> {
                           ),
                         ),
                         Spacer(),
-                        Text("5 min by car"),
+                        Text(""),
                       ],
                     ),
                     SizedBox(height: 16),
