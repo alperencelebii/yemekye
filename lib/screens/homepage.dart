@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: TextField(
                         decoration: const InputDecoration(
                           border: InputBorder.none,
-                          hintText: 'Search',
+                          hintText: 'Ara',
                           hintStyle: TextStyle(
                             color: Color(0xFFB9C3C3),
                           ),
@@ -147,9 +147,8 @@ class _HomeScreenState extends State<HomeScreen> {
                               isActive ? const Color(0xFFF9A602) : Colors.white,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: const Color.fromARGB(255, 0, 0, 0)
-                                .withOpacity(0.1), // Kerning line color
-                            width: 1.5, // Kerning line width
+                            color: const Color(0xFF1D1D1D).withOpacity(0.1),
+                            width: 1.5,
                           ),
                         ),
                         child: Text(

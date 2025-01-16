@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:yemekye/deneme.dart';
 import 'package:yemekye/loginregister/login.dart';
 import 'package:yemekye/screens/homepage.dart';
+import 'package:yemekye/screens/navbar.dart';
 import 'package:yemekye/screens/restaurant_details.dart';
 
 void main() async {
@@ -12,7 +13,6 @@ void main() async {
   runApp(MyApp());
 }
 
-// ekmek turuncusu
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -46,10 +46,8 @@ class AuthStateHandler extends StatelessWidget {
             body: Center(child: Text('Bir hata oluştu: ${snapshot.error}')),
           );
         }
-
-        // Kullanıcı oturum açmışsa, ana sayfaya yönlendir
         if (snapshot.hasData) {
-          return MapScreen();
+          return ExpandableNavbar();
         } else {
           return LoginPage();
         }
