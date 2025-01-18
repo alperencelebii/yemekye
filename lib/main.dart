@@ -46,7 +46,7 @@ class AuthStateHandler extends StatelessWidget {
           );
         }
         if (snapshot.hasData) {
-          return Yonetici();
+          return AdminPanel();
         } else {
           return LoginPage();
         }

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:yemekye/loginregister/shop_register.dart';
-import 'package:yemekye/screens/AddUsers.dart';
 class AddUserPage extends StatelessWidget {
   final String shopId;
 
