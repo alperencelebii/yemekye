@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:yemekye/deneme.dart';
 import 'package:yemekye/loginregister/login.dart';
 import 'package:yemekye/screens/Yoneticipanel.dart';
 import 'package:yemekye/screens/homepage.dart';
@@ -35,21 +34,19 @@ class AuthStateHandler extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
-        // Yükleniyor durumu
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
 
-        // Hata varsa, hata mesajı göster
         if (snapshot.hasError) {
           return Scaffold(
             body: Center(child: Text('Bir hata oluştu: ${snapshot.error}')),
           );
         }
         if (snapshot.hasData) {
-          return AdminPanel();
+          return Yonetici();
         } else {
           return LoginPage();
         }

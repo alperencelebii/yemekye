@@ -170,9 +170,17 @@ class RestaurantDetails extends StatelessWidget {
                                     const SizedBox(height: 8),
                                     ...categoryProducts.map((product) {
                                       return ProductCard(
-                                        productName: product['name'],
-                                        productdiscountPrice: product['discountprice'],
-                                        piece: product['piece'],
+                                        productId: product.id,
+                                        productName:
+                                            product['name'] ?? 'Ürün Adı Yok',
+                                        productPrice: (product['price'] is num)
+                                            ? product['price'].toDouble()
+                                            : 0.0,
+                                        piece: (product['piece'] is int)
+                                            ? product['piece']
+                                            : 0,
+                                        shopId: shopSnapshot.data!
+                                            .id, // 🔥 'shopId' olarak belge kimliğini kullan
                                       );
                                     }).toList(),
                                   ],

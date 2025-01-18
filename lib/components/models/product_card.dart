@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:yemekye/qrandsepet/sepet.dart';
 
 class ProductCard extends StatelessWidget {
+  final String shopId; // Mağaza kimliği eklendi
+  final String productId;
   final String productName;
-  final double productdiscountPrice;
+  final double productPrice;
   final int piece;
 
   const ProductCard({
     Key? key,
+    required this.shopId, // Yeni parametre
+    required this.productId,
     required this.productName,
-    required this.productdiscountPrice,
+    required this.productPrice,
     required this.piece,
   }) : super(key: key);
 
@@ -25,7 +31,7 @@ class ProductCard extends StatelessWidget {
               color: Colors.grey.withOpacity(0.3),
               spreadRadius: 2,
               blurRadius: 5,
-              offset: Offset(0, 3),
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -37,7 +43,7 @@ class ProductCard extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(50),
                 child: Image.asset(
-                  'assets/images/images.jpeg', // Sabit resim yolu
+                  'assets/images/images.jpeg',
                   width: 54,
                   height: 54,
                   fit: BoxFit.cover,
@@ -50,7 +56,7 @@ class ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    productName, // Ürün adı
+                    productName,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -60,7 +66,7 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "₺${productdiscountPrice.toStringAsFixed(2)}", // Ürün fiyatı
+                    "₺${productPrice.toStringAsFixed(2)}",
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -70,7 +76,7 @@ class ProductCard extends StatelessWidget {
               ),
             ),
             Text(
-              '$piece Adet Kaldı', // Stok adedi
+              '$piece Adet Kaldı',
               style: const TextStyle(
                 fontFamily: 'BeVietnamPro',
                 fontSize: 13,
@@ -80,8 +86,8 @@ class ProductCard extends StatelessWidget {
             const SizedBox(width: 8),
             GestureDetector(
               onTap: () {
-                // Detaylara yönlendirme
-                print("Detaya git");
+                CartManager.addToCart(shopId, productId, productName,
+                    productPrice, piece, context); // `shopId` eklendi
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -91,7 +97,7 @@ class ProductCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 child: const Icon(
-                  Icons.arrow_forward,
+                  Icons.add_shopping_cart,
                   color: Colors.white,
                 ),
               ),
