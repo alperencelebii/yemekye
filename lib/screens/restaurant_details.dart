@@ -171,7 +171,7 @@ class RestaurantDetails extends StatelessWidget {
                                     ...categoryProducts.map((product) {
                                       return ProductCard(
                                         productName: product['name'],
-                                        productPrice: product['price'],
+                                        productdiscountPrice: product['discountprice'],
                                         piece: product['piece'],
                                       );
                                     }).toList(),

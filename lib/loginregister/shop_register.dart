@@ -23,32 +23,16 @@ class _CreateShopPageState extends State<CreateShopPage> {
 
     try {
       // Mağazayı Firestore'a kaydet
-      DocumentReference shopRef = await _firestore.collection('shops').add({
+      await _firestore.collection('shops').add({
         'name': shopName,
         'address': shopAddress,
         'productid': [], // Başlangıçta ürünler boş olacak
       });
 
-      // Mağaza oluşturulduktan sonra, kullanıcının bağlı olduğu mağazayı güncelle
-      // Kullanıcıyı mevcut mağaza ile ilişkilendir
-      String shopId = shopRef.id; // Yeni mağazanın ID'si
-
-      // Mağazayı oluşturan kullanıcıyı güncelleme
-      // Örneğin, 'users' koleksiyonunda ilgili kullanıcıyı shopId ile güncelleme
-      // Bu işlem kullanıcıyı mağaza ile ilişkilendirir.
-      var user = await _firestore
-          .collection('users')
-          .doc('user-id')
-          .get(); // 'user-id' ile kullanıcıyı hedefle
-
-      if (user.exists) {
-        await _firestore.collection('users').doc('user-id').update({
-          'shopid': shopId,
-        });
-        // Mağaza oluşturma işlemi başarılı
-        _showSuccessMessage("Mağaza oluşturuldu!");
-        Navigator.pop(context); // Kullanıcıyı önceki sayfaya yönlendir
-      }
+      _showSuccessMessage("Mağaza başarıyla oluşturuldu!");
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pop(context); // 1 saniye sonra bir önceki sayfaya dön
+      });
     } catch (e) {
       _showErrorMessage("Mağaza oluşturulurken hata oluştu: $e");
     }
@@ -60,40 +44,99 @@ class _CreateShopPageState extends State<CreateShopPage> {
   }
 
   void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: Duration(seconds: 1),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: Text("Mağaza Oluştur"),
+        backgroundColor: Colors.orange,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _shopNameController,
-              decoration: InputDecoration(
-                labelText: "Mağaza Adı",
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  "Yeni Mağaza Bilgilerini Girin",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.orange[800],
+                  ),
+                ),
               ),
-            ),
-            TextField(
-              controller: _shopAddressController,
-              decoration: InputDecoration(
-                labelText: "Mağaza Adresi",
+              SizedBox(height: 20),
+              TextField(
+                controller: _shopNameController,
+                decoration: InputDecoration(
+                  labelText: "Mağaza Adı",
+                  labelStyle: TextStyle(color: Colors.orange[700]),
+                  hintText: "Mağaza adını yazın...",
+                  prefixIcon: Icon(Icons.store, color: Colors.orange),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange, width: 2.0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.orange[300]!, width: 1.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _createShop,
-              child: Text("Mağaza Oluştur"),
-            ),
-          ],
+              SizedBox(height: 20),
+              TextField(
+                controller: _shopAddressController,
+                decoration: InputDecoration(
+                  labelText: "Mağaza Adresi",
+                  labelStyle: TextStyle(color: Colors.orange[700]),
+                  hintText: "Mağaza adresini yazın...",
+                  prefixIcon: Icon(Icons.location_on, color: Colors.orange),
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.orange, width: 2.0),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colors.orange[300]!, width: 1.5),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
+              Center(
+                child: ElevatedButton(
+                  onPressed: _createShop,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    backgroundColor: Colors.orange,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    "Mağaza Oluştur",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 class ProductCard extends StatelessWidget {
   final String productName;
-  final double productPrice;
+  final double productdiscountPrice;
   final int piece;
 
   const ProductCard({
     Key? key,
     required this.productName,
-    required this.productPrice,
+    required this.productdiscountPrice,
     required this.piece,
   }) : super(key: key);
 
@@ -60,7 +60,7 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "₺${productPrice.toStringAsFixed(2)}", // Ürün fiyatı
+                    "₺${productdiscountPrice.toStringAsFixed(2)}", // Ürün fiyatı
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,

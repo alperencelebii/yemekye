@@ -37,7 +37,6 @@ class _AddProductState extends State<AddProduct> {
     }
 
     try {
-      // Kullanıcının oturum açtığı bilgiyi alın
       User? currentUser = _auth.currentUser;
 
       if (currentUser == null) {
@@ -45,7 +44,6 @@ class _AddProductState extends State<AddProduct> {
         return;
       }
 
-      // Kullanıcının mağaza ID'sini al
       DocumentSnapshot userDoc =
           await _firestore.collection('users').doc(currentUser.uid).get();
 
@@ -56,7 +54,6 @@ class _AddProductState extends State<AddProduct> {
 
       String shopId = userDoc['shopid'];
 
-      // Yeni ürünü Firestore'da products koleksiyonuna ekle
       DocumentReference productRef =
           await _firestore.collection('products').add({
         'name': name,
@@ -68,19 +65,17 @@ class _AddProductState extends State<AddProduct> {
 
       String productId = productRef.id;
 
-      // shopproduct koleksiyonuna ilişkiyi ekle
       await _firestore.collection('shopproduct').add({
         'shopid': shopId,
         'productid': productId,
       });
 
-      // shop koleksiyonunda ilgili mağazanın productid listesine ürünü ekle
       await _firestore.collection('shops').doc(shopId).update({
         'productid': FieldValue.arrayUnion([productId]),
       });
 
       _showSuccessMessage("Ürün başarıyla eklendi!");
-      Navigator.pop(context); // Kullanıcıyı önceki ekrana yönlendir
+      Navigator.pop(context);
     } catch (e) {
       _showErrorMessage("Ürün eklenirken hata oluştu: $e");
     }
@@ -101,51 +96,80 @@ class _AddProductState extends State<AddProduct> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Ürün Ekle"),
+        backgroundColor: const Color(0xFFF9A602),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: "Ürün Adı",
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    "Yeni Ürün Bilgileri",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFF9A602),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildTextField("Ürün Adı", _nameController),
+                  _buildTextField("Adet", _pieceController,
+                      keyboardType: TextInputType.number),
+                  _buildTextField("Kategori", _categoryController),
+                  _buildTextField("Fiyat", _priceController,
+                      keyboardType: TextInputType.number),
+                  _buildTextField("İndirimli Fiyat", _discountPriceController,
+                      keyboardType: TextInputType.number),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _addProduct,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF9A602),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: const Text(
+                        "Ürünü Ekle",
+                        style: TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            TextField(
-              controller: _pieceController,
-              decoration: const InputDecoration(
-                labelText: "Adet",
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: "Kategori",
-              ),
-            ),
-            TextField(
-              controller: _priceController,
-              decoration: const InputDecoration(
-                labelText: "Fiyat",
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            TextField(
-              controller: _discountPriceController,
-              decoration: const InputDecoration(
-                labelText: "İndirimli Fiyat",
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _addProduct,
-              child: const Text("Ürünü Ekle"),
-            ),
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller,
+      {TextInputType keyboardType = TextInputType.text}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Color(0xFFF9A602)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: const BorderSide(color: Color(0xFFF9A602), width: 2),
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );

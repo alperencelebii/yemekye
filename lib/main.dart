@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:yemekye/deneme.dart';
 import 'package:yemekye/loginregister/login.dart';
+import 'package:yemekye/screens/Yoneticipanel.dart';
 import 'package:yemekye/screens/homepage.dart';
 import 'package:yemekye/adminpanel/admin.dart';
 import 'package:yemekye/screens/navbar.dart';

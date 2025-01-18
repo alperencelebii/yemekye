@@ -21,7 +21,10 @@ class MyProducts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Ürünlerisadsadm")),
+      appBar: AppBar(
+        title: const Text("Ürünlerim"),
+        backgroundColor: Colors.orange,
+      ),
       body: FutureBuilder(
         future: _getUserShopId(),
         builder: (context, AsyncSnapshot<String?> shopIdSnapshot) {
@@ -53,9 +56,11 @@ class MyProducts extends StatelessWidget {
                     child: Text("Mağazanıza ait ürün bulunamadı."));
               }
 
-              return ListView(
-                children: shopProducts.map((shopProductDoc) {
-                  String productId = shopProductDoc['productid'];
+              return ListView.builder(
+                itemCount: shopProducts.length,
+                padding: const EdgeInsets.all(8.0),
+                itemBuilder: (context, index) {
+                  String productId = shopProducts[index]['productid'];
 
                   return FutureBuilder(
                     future:
@@ -63,9 +68,11 @@ class MyProducts extends StatelessWidget {
                     builder: (context,
                         AsyncSnapshot<DocumentSnapshot> productSnapshot) {
                       if (!productSnapshot.hasData) {
-                        return const ListTile(
-                          title: Text("Yükleniyor..."),
-                        );
+                        return const Center(
+                            child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: CircularProgressIndicator(),
+                        ));
                       }
 
                       DocumentSnapshot productDoc = productSnapshot.data!;
@@ -73,19 +80,80 @@ class MyProducts extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
 
-                      return ListTile(
-                        title: Text(productDoc['name']),
-                        subtitle: Text("Kategori: ${productDoc['category']}"),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            // Ürün düzenleme mantığı buraya eklenebilir
-                          },
+                      return Container(
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 10.0),
+                        padding: const EdgeInsets.all(12.0),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12.0),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.3),
+                              spreadRadius: 3,
+                              blurRadius: 5,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            // Ürün Resmi Placeholder
+                            Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                color: Colors.grey[200],
+                              ),
+                              child: const Icon(
+                                Icons.image,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(width: 16.0),
+
+                            // Ürün Detayları
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    productDoc['name'],
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8.0),
+                                  Text(
+                                    "Kategori: ${productDoc['category']}",
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Düzenle Butonu
+                            IconButton(
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.orange,
+                              ),
+                              onPressed: () {
+                                // Ürün düzenleme mantığı buraya eklenebilir
+                              },
+                            ),
+                          ],
                         ),
                       );
                     },
                   );
-                }).toList(),
+                },
               );
             },
           );
