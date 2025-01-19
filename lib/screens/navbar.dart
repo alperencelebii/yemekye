@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:yemekye/adminpanel/admin.dart';
+import 'package:yemekye/map/map.dart';
 import 'package:yemekye/qrandsepet/qrcodescan.dart';
 import 'package:yemekye/screens/Yoneticipanel.dart';
 import 'package:yemekye/screens/homepage.dart';
@@ -32,7 +33,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
 
   final List<Widget> _pages = [
     HomeScreen(),
-    SepetScreen(),
+    GoogleMapsExample(),
     AdminPanel(),
     QRCodeScannerScreen(),
     SepetScreen(),
