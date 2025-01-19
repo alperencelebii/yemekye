@@ -118,6 +118,8 @@ class _GoogleMapsExampleState extends State<GoogleMapsExample> {
                 zoom: 15.0,
               ),
               onTap: _addMarker,
+              myLocationEnabled: true, // Konumu gösterme
+              myLocationButtonEnabled: true, // Konum butonunu gösterme
             ),
     );
   }
