@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:yemekye/qrandsepet/sepet.dart';
 
 class QRCodeScannerScreen extends StatefulWidget {
   @override
@@ -22,13 +21,13 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
       final shopId = uri.queryParameters['shopId'];
 
       if (cartId == null || shopId == null) {
-        _showResultDialog("Hata", "QR kod bilgileri eksik.");
+        _showErrorDialog("Hata", "QR kod bilgileri eksik.");
         return;
       }
 
       final user = _auth.currentUser;
       if (user == null) {
-        _showResultDialog("Hata", "Kullanıcı oturum açmamış.");
+        _showErrorDialog("Hata", "Kullanıcı oturum açmamış.");
         return;
       }
 
@@ -37,56 +36,33 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
       final currentShopId = shopDoc.data()?['shopid'];
 
       if (currentShopId != shopId) {
-        _showResultDialog("Hata", "Ürünler sizin mağazanıza ait değil.");
+        _showErrorDialog("Hata", "Ürünler sizin mağazanıza ait değil.");
         return;
       }
 
       // Sepeti al
       final cartDoc = await _firestore.collection('carts').doc(cartId).get();
       if (!cartDoc.exists) {
-        _showResultDialog("Hata", "Geçersiz sepet bilgisi.");
+        _showErrorDialog("Hata", "Geçersiz sepet bilgisi.");
         return;
       }
 
       final products =
           List<Map<String, dynamic>>.from(cartDoc.data()?['products'] ?? []);
 
-      // Stokları güncelle
-      for (var product in products) {
-        final productId = product['productId'];
-        final quantity = product['quantity'];
-
-        final productRef = _firestore.collection('products').doc(productId);
-        await _firestore.runTransaction((transaction) async {
-          final snapshot = await transaction.get(productRef);
-          if (!snapshot.exists) {
-            throw Exception("Ürün bulunamadı.");
-          }
-
-          final currentStock = snapshot.data()?['piece'] ?? 0;
-          if (currentStock < quantity) {
-            throw Exception("${product['name']} için yeterli stok yok.");
-          }
-
-          transaction.update(productRef, {'piece': currentStock - quantity});
-        });
-      }
-
-      // Sepeti temizle
-      await _firestore.collection('carts').doc(cartId).update({
-        'products': FieldValue.delete(),
-      });
-
-      // Bellekteki sepeti temizle
-      CartManager.clearCart();
-
-      _showResultDialog("Başarılı", "Satış onaylandı ve sepet temizlendi.");
+      // Onay ekranına yönlendir
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ConfirmCartScreen(products: products),
+        ),
+      );
     } catch (e) {
-      _showResultDialog("Hata", "İşlem sırasında bir hata oluştu: $e");
+      _showErrorDialog("Hata", "İşlem sırasında bir hata oluştu: $e");
     }
   }
 
-  void _showResultDialog(String title, String message) {
+  void _showErrorDialog(String title, String message) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -163,6 +139,93 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class ConfirmCartScreen extends StatelessWidget {
+  final List<Map<String, dynamic>> products;
+
+  const ConfirmCartScreen({Key? key, required this.products}) : super(key: key);
+
+  double calculateTotalPrice() {
+    return products.fold(0, (total, product) {
+      return total + (product['price'] * product['piece']);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Onay Sayfası')),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: products.length,
+              itemBuilder: (context, index) {
+                final product = products[index];
+                return Card(
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product['name'] ?? "Ürün Adı Yok",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 5),
+                            Text("Adet: ${product['piece']}"),
+                          ],
+                        ),
+                        Text(
+                          "₺${product['price'].toStringAsFixed(2)}",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Text(
+                  "Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: () {
+                    // Satış onaylama işlemleri burada yapılabilir
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Satışı Onayla"),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
