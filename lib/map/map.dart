@@ -12,12 +12,12 @@ class _GoogleMapsExampleState extends State<GoogleMapsExample> {
   late GoogleMapController _mapController;
   final Set<Marker> _markers = {};
   LatLng? _currentPosition;
+  List<Map<String, dynamic>> _nearbyMarkers = [];
 
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
-    _loadMarkersFromFirebase();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -51,25 +51,50 @@ class _GoogleMapsExampleState extends State<GoogleMapsExample> {
     setState(() {
       _currentPosition = LatLng(position.latitude, position.longitude);
     });
+
+    // Konum alındığında markerları yükle
+    _loadMarkersFromFirebase();
   }
 
   Future<void> _loadMarkersFromFirebase() async {
+    if (_currentPosition == null) {
+      return; // Eğer konum alınmadıysa, yükleme işlemi yapma
+    }
+
     final snapshot =
         await FirebaseFirestore.instance.collection('markers').get();
-
+    List<Map<String, dynamic>> nearby = [];
     setState(() {
+      _markers.clear(); // Önceki marker'ları temizle
       for (var doc in snapshot.docs) {
         final data = doc.data();
-        final marker = Marker(
-          markerId: MarkerId(doc.id),
-          position: LatLng(data['latitude'], data['longitude']),
-          infoWindow: InfoWindow(
-            title: data['title'],
-            snippet: data['snippet'],
-          ),
+        final markerPosition = LatLng(data['latitude'], data['longitude']);
+        final distance = Geolocator.distanceBetween(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          markerPosition.latitude,
+          markerPosition.longitude,
         );
-        _markers.add(marker);
+
+        if (distance <= 1000) {
+          // 1 km mesafedeki markerlar
+          final marker = Marker(
+            markerId: MarkerId(doc.id),
+            position: markerPosition,
+            infoWindow: InfoWindow(
+              title: data['title'],
+              snippet: data['snippet'],
+            ),
+          );
+          _markers.add(marker);
+          nearby.add({
+            'title': data['title'],
+            'snippet': data['snippet'],
+            'distance': (distance / 1000).toStringAsFixed(2), // km cinsinden
+          });
+        }
       }
+      _nearbyMarkers = nearby;
     });
   }
 
@@ -108,19 +133,55 @@ class _GoogleMapsExampleState extends State<GoogleMapsExample> {
       appBar: AppBar(
         title: Text('Google Maps Example'),
       ),
-      body: _currentPosition == null
-          ? Center(child: CircularProgressIndicator())
-          : GoogleMap(
-              onMapCreated: _onMapCreated,
-              markers: _markers,
-              initialCameraPosition: CameraPosition(
-                target: _currentPosition!,
-                zoom: 15.0,
+      body: Column(
+        children: [
+          Expanded(
+            child: _currentPosition == null
+                ? Center(child: CircularProgressIndicator())
+                : GoogleMap(
+                    onMapCreated: _onMapCreated,
+                    markers: _markers,
+                    initialCameraPosition: CameraPosition(
+                      target: _currentPosition!,
+                      zoom: 15.0,
+                    ),
+                    onTap: _addMarker,
+                    myLocationEnabled: true, // Konumu gösterme
+                    myLocationButtonEnabled: true, // Konum butonunu gösterme
+                  ),
+          ),
+          if (_nearbyMarkers.isNotEmpty)
+            Container(
+              height: 150,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _nearbyMarkers.length,
+                itemBuilder: (context, index) {
+                  final marker = _nearbyMarkers[index];
+                  return Card(
+                    margin: EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            marker['title'],
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 5),
+                          Text(marker['snippet']),
+                          SizedBox(height: 5),
+                          Text('${marker['distance']} km'),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
-              onTap: _addMarker,
-              myLocationEnabled: true, // Konumu gösterme
-              myLocationButtonEnabled: true, // Konum butonunu gösterme
-            ),
+            )
+        ],
+      ),
     );
   }
 
