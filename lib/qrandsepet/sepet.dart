@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class CartManager {
   static final List<Map<String, dynamic>> _cartItems = [];
@@ -97,34 +98,64 @@ class _SepetScreenState extends State<SepetScreen> {
     });
   }
 
-  Future<void> updateStock() async {
-    final FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    for (var item in CartManager.cartItems) {
-      final productRef =
-          firestore.collection('products').doc(item['productId']);
-      await firestore.runTransaction((transaction) async {
-        final snapshot = await transaction.get(productRef);
-
-        if (!snapshot.exists) {
-          throw Exception("Ürün bulunamadı!");
-        }
-
-        final int currentStock = snapshot['piece'];
-        if (currentStock >= item['quantity']) {
-          transaction.update(productRef, {
-            'piece': currentStock - item['quantity'],
-          });
-        } else {
-          throw Exception("Yetersiz stok: ${item['name']}");
-        }
-      });
-    }
-  }
-
   void showSnackbar(BuildContext context, String message) {
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> generateQRCode() async {
+    if (CartManager._shopId == null || CartManager.cartItems.isEmpty) {
+      showSnackbar(context, "Sepet boş!");
+      return;
+    }
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final cartDoc = await firestore.collection('carts').add({
+        'createdAt': FieldValue.serverTimestamp(),
+        'deviceId': 'exampleDeviceId', // Cihaz ID'si
+        'products': CartManager.cartItems,
+        'shopId': CartManager._shopId,
+      });
+
+      final qrCodeData = {
+        'cartId': cartDoc.id,
+        'shopId': CartManager._shopId,
+      };
+
+      final qrString = qrCodeData.toString();
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('QR Kod'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                QrImageView(
+                  data: qrString,
+                  size: 200.0,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                    'Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                child: const Text('Kapat'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      showSnackbar(context, "QR kod oluşturulamadı: $e");
+    }
   }
 
   @override
@@ -140,7 +171,7 @@ class _SepetScreenState extends State<SepetScreen> {
                 final item = CartManager.cartItems[index];
                 return ListTile(
                   title: Text(item['name']),
-                  subtitle: Text("₺${item['price']} x ${item['quantity']}"),
+                  subtitle: Text("\u20ba${item['price']} x ${item['quantity']}"),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -172,7 +203,7 @@ class _SepetScreenState extends State<SepetScreen> {
             child: Column(
               children: [
                 Text(
-                  "Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}",
+                  "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -180,18 +211,8 @@ class _SepetScreenState extends State<SepetScreen> {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: () async {
-                    try {
-                      await updateStock();
-                      CartManager.clearCart();
-                      setState(() {});
-                      showSnackbar(
-                          context, 'Sepet onaylandı, stok güncellendi!');
-                    } catch (e) {
-                      showSnackbar(context, 'Hata: ${e.toString()}');
-                    }
-                  },
-                  child: const Text('Sepeti Onayla'),
+                  onPressed: generateQRCode,
+                  child: const Text('QR Kod Oluştur'),
                 ),
               ],
             ),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:yemekye/qrandsepet/sepet.dart';
 import 'package:yemekye/screens/homepage.dart';
-import 'package:yemekye/screens/restaurant_details.dart';
+import 'package:yemekye/qrandsepet/sepet.dart';
 
 class ExpandableNavbar extends StatefulWidget {
   @override
@@ -33,7 +32,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     HomeScreen(),
     HomeScreen(),
     HomeScreen(),
-    SepetScreen()
+    SepetScreen(),
   ];
 
   @override

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:yemekye/screens/addproduct.dart';
 import 'package:yemekye/adminpanel/myProducts.dart';
+import 'package:yemekye/qrandsepet/qrcodescan.dart';
 import 'shopsettings.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -69,57 +70,69 @@ class _AdminPanelState extends State<AdminPanel> {
         ),
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color(0xFFF9A602),
-              ),
-              child: Center(
-                child: Text(
-                  "Yönetim Paneli",
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
+  child: ListView(
+    padding: EdgeInsets.zero,
+    children: [
+      DrawerHeader(
+        decoration: BoxDecoration(
+          color: Color(0xFFF9A602),
+        ),
+        child: Center(
+          child: Text(
+            "Yönetim Paneli",
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
-            ListTile(
-              leading: Icon(Icons.shopping_basket),
-              title: Text("Ürünler"),
-              onTap: () {
-                Navigator.pop(context);
-                showSubMenu(context, "Ürünler");
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text("Ayarlar"),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => ShopSettings()));
-              },
-            ),
-            Divider(),
-            isLoading
-                ? Center(child: CircularProgressIndicator())
-                : shopInfo != null
-                    ? ListTile(
-                        leading: Icon(Icons.store),
-                        title: Text("Mağaza Bilgileri"),
-                        subtitle: Text(shopInfo?['name'] ?? 'Bilinmiyor'),
-                      )
-                    : ListTile(
-                        leading: Icon(Icons.error),
-                        title: Text("Mağaza bilgisi bulunamadı"),
-                      ),
-          ],
+          ),
         ),
       ),
+      ListTile(
+        leading: Icon(Icons.shopping_basket),
+        title: Text("Ürünler"),
+        onTap: () {
+          Navigator.pop(context);
+          showSubMenu(context, "Ürünler");
+        },
+      ),
+      ListTile(
+        leading: Icon(Icons.settings),
+        title: Text("Ayarlar"),
+        onTap: () {
+          Navigator.pop(context);
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => ShopSettings()));
+        },
+      ),
+      Divider(),
+      isLoading
+          ? Center(child: CircularProgressIndicator())
+          : shopInfo != null
+              ? ListTile(
+                  leading: Icon(Icons.store),
+                  title: Text("Mağaza Bilgileri"),
+                  subtitle: Text(shopInfo?['name'] ?? 'Bilinmiyor'),
+                )
+              : ListTile(
+                  leading: Icon(Icons.error),
+                  title: Text("Mağaza bilgisi bulunamadı"),
+                ),
+      Divider(),
+      ListTile(
+        leading: Icon(Icons.qr_code_scanner),
+        title: Text("QR Kod Oku"), // Yeni QR Kod Oku seçeneği
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
+          );
+        },
+      ),
+    ],
+  ),
+),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -207,6 +220,7 @@ class _AdminPanelState extends State<AdminPanel> {
                     ),
                   ],
                 ),
+                
                 child: Center(
                   child: Icon(
                     Icons.qr_code_2,
