@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -11,20 +11,13 @@ class QRCodeScannerScreen extends StatefulWidget {
 class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GlobalKey _qrKey = GlobalKey(debugLabel: 'QR');
-  late QRViewController _controller;
   bool _isQRScanned = false;
   String _scannedCode = '';
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   Future<void> _verifyQRCode(String qrData) async {
     try {
-      final qrObject = Map<String, dynamic>.from(Uri.parse(qrData).queryParameters);
+      final qrObject =
+          Map<String, dynamic>.from(Uri.parse(qrData).queryParameters);
       final shopId = qrObject['shopId'];
       final items = qrObject['items'];
 
@@ -68,10 +61,22 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("QR Kod Oku")),
+      appBar: AppBar(title: const Text("QR Kod Taraması")),
       body: Stack(
         children: [
-          _buildQrView(context),
+          MobileScanner(
+            onDetect: (barcode) async {
+              if (!_isQRScanned && barcode.barcodes.isNotEmpty) {
+                setState(() {
+                  _isQRScanned = true;
+                  _scannedCode =
+                      barcode.barcodes.first.rawValue ?? "Veri okunamadı";
+                });
+
+                await _verifyQRCode(_scannedCode);
+              }
+            },
+          ),
           Align(
             alignment: Alignment.center,
             child: Container(
@@ -91,20 +96,6 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
     );
   }
 
-  Widget _buildQrView(BuildContext context) {
-    return QRView(
-      key: _qrKey,
-      onQRViewCreated: _onQRViewCreated,
-      overlay: QrScannerOverlayShape(
-        borderColor: Colors.blue,
-        borderRadius: 10,
-        borderLength: 30,
-        borderWidth: 10,
-        cutOutSize: 220,
-      ),
-    );
-  }
-
   Widget _buildScannedCode() {
     return Positioned(
       bottom: 20,
@@ -112,14 +103,14 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
       right: 0,
       child: Center(
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: Colors.blue,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
             'Scanned Code: $_scannedCode',
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -128,22 +119,5 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
         ),
       ),
     );
-  }
-
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() {
-      _controller = controller;
-    });
-
-    _controller.scannedDataStream.listen((scanData) async {
-      if (!_isQRScanned) {
-        setState(() {
-          _isQRScanned = true;
-          _scannedCode = scanData.code!;
-        });
-
-        await _verifyQRCode(scanData.code!);
-      }
-    });
   }
 }
