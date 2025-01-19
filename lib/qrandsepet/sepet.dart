@@ -118,12 +118,8 @@ class _SepetScreenState extends State<SepetScreen> {
         'shopId': CartManager._shopId,
       });
 
-      final qrCodeData = {
-        'cartId': cartDoc.id,
-        'shopId': CartManager._shopId,
-      };
-
-      final qrString = qrCodeData.toString();
+      final qrString =
+          'https://example.com/cart?cartId=${cartDoc.id}&shopId=${CartManager._shopId}';
 
       showDialog(
         context: context,
@@ -138,8 +134,7 @@ class _SepetScreenState extends State<SepetScreen> {
                   size: 200.0,
                 ),
                 const SizedBox(height: 10),
-                Text(
-                    'Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}'),
+                Text('Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}'),
               ],
             ),
             actions: [
@@ -171,7 +166,8 @@ class _SepetScreenState extends State<SepetScreen> {
                 final item = CartManager.cartItems[index];
                 return ListTile(
                   title: Text(item['name']),
-                  subtitle: Text("\u20ba${item['price']} x ${item['quantity']}"),
+                  subtitle:
+                      Text("\u20ba${item['price']} x ${item['quantity']}"),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
