@@ -81,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Firebase'den markerları alıp haritaya ekler
+// Firebase'den markerları alıp haritaya ekler
   Future<void> _loadMarkersFromFirebase() async {
     if (_currentPosition == null) return;
 
@@ -113,8 +114,10 @@ class _HomeScreenState extends State<HomeScreen> {
               markerId: MarkerId(doc.id),
               position: shopPosition,
               infoWindow: InfoWindow(
-                title: data['name'] ?? 'Mağaza Adı Yok',
-                snippet: data['address'] ?? 'Adres Bilgisi Yok',
+                title: data['title'] ??
+                    'Mağaza Adı Yok', // title yerine name kullandık
+                snippet: data['snippet'] ??
+                    'Adres Bilgisi Yok', // snippet yerine address kullandık
               ),
             );
             _markers.add(marker);
