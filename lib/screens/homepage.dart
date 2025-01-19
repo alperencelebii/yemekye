@@ -63,6 +63,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Marker'ları yükle
     _loadMarkersFromFirebase();
+
+    // Konum değişikliklerini dinle ve markerları güncelle
+    Geolocator.getPositionStream(
+        locationSettings: LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter:
+          10, // Konum değişiminde 10 metrelik bir fark olduğunda tetiklenir
+    )).listen((Position position) {
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+      });
+
+      // Marker'ları yeniden yükle
+      _loadMarkersFromFirebase();
+    });
   }
 
   // Firebase'den markerları alıp haritaya ekler
