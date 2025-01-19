@@ -31,7 +31,6 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
         return;
       }
 
-      // Kullanıcının mağaza kimliği
       final shopDoc = await _firestore.collection('users').doc(user.uid).get();
       final currentShopId = shopDoc.data()?['shopid'];
 
@@ -40,7 +39,6 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
         return;
       }
 
-      // Sepeti al
       final cartDoc = await _firestore.collection('carts').doc(cartId).get();
       if (!cartDoc.exists) {
         _showErrorDialog("Hata", "Geçersiz sepet bilgisi.");
@@ -50,7 +48,6 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
       final products =
           List<Map<String, dynamic>>.from(cartDoc.data()?['products'] ?? []);
 
-      // Onay ekranına yönlendir
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -151,8 +148,48 @@ class ConfirmCartScreen extends StatelessWidget {
 
   double calculateTotalPrice() {
     return products.fold(0, (total, product) {
-      return total + (product['price'] * product['piece']);
+      return total + (product['price'] * product['quantity']);
     });
+  }
+
+  Future<void> _reduceStock(BuildContext context) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      for (var product in products) {
+        final productDoc = await firestore
+            .collection('products')
+            .doc(product['productId'])
+            .get();
+
+        if (productDoc.exists) {
+          final currentStock = productDoc.data()?['piece'] ?? 0;
+          final newStock = currentStock - product['quantity'];
+
+          if (newStock < 0) {
+            throw Exception(
+                "${product['name']} için stok yetersiz. Mevcut stok: $currentStock");
+          }
+
+          await firestore
+              .collection('products')
+              .doc(product['productId'])
+              .update({'piece': newStock});
+        } else {
+          throw Exception("${product['name']} bulunamadı.");
+        }
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Satış tamamlandı ve stok güncellendi!')),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Hata: $e')),
+      );
+    }
   }
 
   @override
@@ -186,15 +223,10 @@ class ConfirmCartScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 5),
-                            Text("Adet: ${product['piece']}"),
+                            Text(
+                                "Fiyat: ₺${product['price'].toStringAsFixed(2)}"),
+                            Text("Sepetteki Adet: ${product['quantity']}"),
                           ],
-                        ),
-                        Text(
-                          "₺${product['price'].toStringAsFixed(2)}",
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
                         ),
                       ],
                     ),
@@ -216,10 +248,7 @@ class ConfirmCartScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: () {
-                    // Satış onaylama işlemleri burada yapılabilir
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => _reduceStock(context),
                   child: const Text("Satışı Onayla"),
                 ),
               ],
