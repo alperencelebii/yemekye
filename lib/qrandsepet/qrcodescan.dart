@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:yemekye/qrandsepet/sepet.dart';
 
 class QRCodeScannerScreen extends StatefulWidget {
   @override
@@ -180,6 +181,9 @@ class ConfirmCartScreen extends StatelessWidget {
         }
       }
 
+      // Sepeti temizle
+      CartManager.clearCart();
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Satış tamamlandı ve stok güncellendi!')),
       );
@@ -195,7 +199,12 @@ class ConfirmCartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Onay Sayfası')),
+      backgroundColor: const Color(0xFF1D1D1D),
+      appBar: AppBar(
+        title: const Text('Onay Sayfası'),
+        backgroundColor: const Color(0xFFF9A602),
+        foregroundColor: Colors.white,
+      ),
       body: Column(
         children: [
           Expanded(
@@ -206,7 +215,8 @@ class ConfirmCartScreen extends StatelessWidget {
                 return Card(
                   margin:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  elevation: 2,
+                  elevation: 3,
+                  color: Colors.white,
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
                     child: Row(
@@ -220,12 +230,24 @@ class ConfirmCartScreen extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
+                                color: Color(0xFF1D1D1D),
                               ),
                             ),
                             const SizedBox(height: 5),
                             Text(
-                                "Fiyat: ₺${product['price'].toStringAsFixed(2)}"),
-                            Text("Sepetteki Adet: ${product['quantity']}"),
+                              "Fiyat: ₺${product['price'].toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF1D1D1D),
+                              ),
+                            ),
+                            Text(
+                              "Sepetteki Adet: ${product['quantity']}",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF1D1D1D),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -235,8 +257,15 @@ class ConfirmCartScreen extends StatelessWidget {
               },
             ),
           ),
-          Padding(
+          Container(
             padding: const EdgeInsets.all(16.0),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF9A602),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
             child: Column(
               children: [
                 Text(
@@ -244,11 +273,21 @@ class ConfirmCartScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () => _reduceStock(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1D1D1D),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
                   child: const Text("Satışı Onayla"),
                 ),
               ],

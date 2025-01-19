@@ -32,7 +32,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
 
   final List<Widget> _pages = [
     HomeScreen(),
-    Yonetici(),
+    SepetScreen(),
     AdminPanel(),
     QRCodeScannerScreen(),
     SepetScreen(),

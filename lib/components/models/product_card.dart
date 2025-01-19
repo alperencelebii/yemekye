@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:yemekye/qrandsepet/sepet.dart';
 
 class ProductCard extends StatelessWidget {
-  final String shopId; // Mağaza kimliği eklendi
+  final String shopId;
   final String productId;
   final String productName;
   final double productPrice;
@@ -11,7 +11,7 @@ class ProductCard extends StatelessWidget {
 
   const ProductCard({
     Key? key,
-    required this.shopId, // Yeni parametre
+    required this.shopId,
     required this.productId,
     required this.productName,
     required this.productPrice,
@@ -87,7 +87,7 @@ class ProductCard extends StatelessWidget {
             GestureDetector(
               onTap: () {
                 CartManager.addToCart(shopId, productId, productName,
-                    productPrice, piece, context); // `shopId` eklendi
+                    productPrice, piece, context);
               },
               child: Container(
                 decoration: BoxDecoration(
