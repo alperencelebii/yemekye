@@ -84,15 +84,26 @@ class _HomeScreenState extends State<HomeScreen> {
         if (latitude != null && longitude != null) {
           final shopPosition = LatLng(latitude, longitude);
 
-          final marker = Marker(
-            markerId: MarkerId(doc.id),
-            position: shopPosition,
-            infoWindow: InfoWindow(
-              title: data['name'] ?? 'Mağaza Adı Yok',
-              snippet: data['address'] ?? 'Adres Bilgisi Yok',
-            ),
+          // Kullanıcı konumuyla marker arasındaki mesafeyi hesapla
+          double distanceInMeters = Geolocator.distanceBetween(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+            shopPosition.latitude,
+            shopPosition.longitude,
           );
-          _markers.add(marker);
+
+          // 1 km (1000 metre) mesafedeki markerları ekle
+          if (distanceInMeters <= 1000) {
+            final marker = Marker(
+              markerId: MarkerId(doc.id),
+              position: shopPosition,
+              infoWindow: InfoWindow(
+                title: data['name'] ?? 'Mağaza Adı Yok',
+                snippet: data['address'] ?? 'Adres Bilgisi Yok',
+              ),
+            );
+            _markers.add(marker);
+          }
         }
       }
     });
