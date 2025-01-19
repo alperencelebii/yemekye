@@ -6,7 +6,8 @@ class CartManager {
   static final List<Map<String, dynamic>> _cartItems = [];
   static String? _shopId;
 
-  static List<Map<String, dynamic>> get cartItems => _cartItems;
+  static List<Map<String, dynamic>> get cartItems =>
+      List.unmodifiable(_cartItems);
 
   static void addToCart(String shopId, String productId, String productName,
       double productPrice, int piece, BuildContext context) {
@@ -80,6 +81,8 @@ class CartManager {
       _cartItems[index]['quantity'] += 1;
     } else if (value < 0 && _cartItems[index]['quantity'] > 1) {
       _cartItems[index]['quantity'] -= 1;
+    } else if (value < 0 && _cartItems[index]['quantity'] == 1) {
+      _cartItems.removeAt(index);
     }
   }
 }
@@ -157,64 +160,66 @@ class _SepetScreenState extends State<SepetScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Sepet')),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: CartManager.cartItems.length,
-              itemBuilder: (context, index) {
-                final item = CartManager.cartItems[index];
-                return ListTile(
-                  title: Text(item['name']),
-                  subtitle:
-                      Text("\u20ba${item['price']} x ${item['quantity']}"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+      body: CartManager.cartItems.isEmpty
+          ? const Center(child: Text('Sepetiniz boş.'))
+          : Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: CartManager.cartItems.length,
+                    itemBuilder: (context, index) {
+                      final item = CartManager.cartItems[index];
+                      return ListTile(
+                        title: Text(item['name']),
+                        subtitle: Text(
+                            "\u20ba${item['price']} x ${item['quantity']}"),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.remove),
+                              onPressed: () {
+                                setState(() {
+                                  CartManager.updateQuantity(index, -1);
+                                });
+                              },
+                            ),
+                            Text('${item['quantity']}'),
+                            IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () {
+                                setState(() {
+                                  CartManager.updateQuantity(index, 1);
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
                     children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove),
-                        onPressed: () {
-                          setState(() {
-                            CartManager.updateQuantity(index, -1);
-                          });
-                        },
+                      Text(
+                        "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}",
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      Text('${item['quantity']}'),
-                      IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: () {
-                          setState(() {
-                            CartManager.updateQuantity(index, 1);
-                          });
-                        },
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: generateQRCode,
+                        child: const Text('QR Kod Oluştur'),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Text(
-                  "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: generateQRCode,
-                  child: const Text('QR Kod Oluştur'),
                 ),
               ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }
