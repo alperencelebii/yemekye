@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:yemekye/qrandsepet/sepet.dart';
 
 class QRCodeScannerScreen extends StatefulWidget {
   @override
@@ -52,7 +51,10 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ConfirmCartScreen(products: products),
+          builder: (context) => ConfirmCartScreen(
+            products: products,
+            cartId: cartId, // `cartId`'yi gönderiyoruz
+          ),
         ),
       );
     } catch (e) {
@@ -93,7 +95,13 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
                       barcode.barcodes.first.rawValue ?? "Veri okunamadı";
                 });
 
-                await _verifyQRCode(_scannedCode);
+                try {
+                  await _verifyQRCode(_scannedCode);
+                } finally {
+                  setState(() {
+                    _isQRScanned = false; // Tekrar tarama yapmaya izin ver
+                  });
+                }
               }
             },
           ),
@@ -104,39 +112,13 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
               height: 200,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Color(0xFFF9A602),
+                  color: const Color(0xFFF9A602),
                   width: 2.0,
                 ),
               ),
             ),
           ),
-          if (_isQRScanned) _buildScannedCode(),
         ],
-      ),
-    );
-  }
-
-  Widget _buildScannedCode() {
-    return Positioned(
-      bottom: 20,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: Color(0xFFF9A602),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            'Scanned Code: $_scannedCode',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
       ),
     );
   }
@@ -144,8 +126,13 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
 
 class ConfirmCartScreen extends StatelessWidget {
   final List<Map<String, dynamic>> products;
+  final String cartId; // `cartId` parametresi
 
-  const ConfirmCartScreen({Key? key, required this.products}) : super(key: key);
+  const ConfirmCartScreen({
+    Key? key,
+    required this.products,
+    required this.cartId,
+  }) : super(key: key);
 
   double calculateTotalPrice() {
     return products.fold(0, (total, product) {
@@ -157,6 +144,7 @@ class ConfirmCartScreen extends StatelessWidget {
     try {
       final firestore = FirebaseFirestore.instance;
 
+      // Tüm ürünlerin stoklarını kontrol et ve düşür
       for (var product in products) {
         final productDoc = await firestore
             .collection('products')
@@ -181,14 +169,17 @@ class ConfirmCartScreen extends StatelessWidget {
         }
       }
 
-      // Sepeti temizle
-      CartManager.clearCart();
+      // Sepeti "Onaylandı" olarak işaretle ve sipariş numarasını ekle
+      await firestore.collection('carts').doc(cartId).update({
+        'status': 'Onaylandı',
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Satış tamamlandı ve stok güncellendi!')),
+        SnackBar(content: Text('Satış tamamlandı!')),
       );
 
-      Navigator.pop(context);
+      Navigator.pop(context); // Kullanıcıyı önceki ekrana döndür
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Hata: $e')),
@@ -216,41 +207,10 @@ class ConfirmCartScreen extends StatelessWidget {
                   margin:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   elevation: 3,
-                  color: Colors.white,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              product['name'] ?? "Ürün Adı Yok",
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1D1D1D),
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              "Fiyat: ₺${product['price'].toStringAsFixed(2)}",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF1D1D1D),
-                              ),
-                            ),
-                            Text(
-                              "Sepetteki Adet: ${product['quantity']}",
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF1D1D1D),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  child: ListTile(
+                    title: Text(product['name'] ?? 'Ürün Adı Yok'),
+                    subtitle: Text(
+                      "Fiyat: ₺${product['price'].toStringAsFixed(2)}\nAdet: ${product['quantity']}",
                     ),
                   ),
                 );
@@ -261,10 +221,6 @@ class ConfirmCartScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16.0),
             decoration: const BoxDecoration(
               color: Color(0xFFF9A602),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
             ),
             child: Column(
               children: [
@@ -279,15 +235,6 @@ class ConfirmCartScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: () => _reduceStock(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1D1D1D),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
                   child: const Text("Satışı Onayla"),
                 ),
               ],

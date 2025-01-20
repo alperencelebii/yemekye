@@ -114,45 +114,77 @@ class _SepetScreenState extends State<SepetScreen> {
 
     try {
       final firestore = FirebaseFirestore.instance;
+
+      // Mevcut en yüksek sipariş numarasını al
+      final querySnapshot = await firestore
+          .collection('carts')
+          .orderBy('orderNumber', descending: true)
+          .limit(1)
+          .get();
+
+      int orderNumber = 1; // İlk sipariş için başlangıç numarası
+      if (querySnapshot.docs.isNotEmpty) {
+        orderNumber = (querySnapshot.docs.first.data()['orderNumber'] ?? 0) + 1;
+      }
+
+      // Yeni sepet belgesini oluştur
       final cartDoc = await firestore.collection('carts').add({
         'createdAt': FieldValue.serverTimestamp(),
         'deviceId': 'exampleDeviceId', // Cihaz ID'si
         'products': CartManager.cartItems,
         'shopId': CartManager._shopId,
+        'orderNumber': orderNumber, // Sipariş numarası
       });
 
       final qrString =
           'https://example.com/cart?cartId=${cartDoc.id}&shopId=${CartManager._shopId}';
 
-      // QR Kod gösterilirken sepet temizlenmiyor
+      // Onay ekranı
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (BuildContext context) {
           return AlertDialog(
             backgroundColor: Colors.white,
-            title: const Text('QR Kod', style: TextStyle(color: Colors.black)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                Icon(Icons.check_circle,
+                    color: Colors.green, size: 80), // Yeşil Tik
+                const SizedBox(height: 10),
+                Text(
+                  'Satış Onaylandı!',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Sipariş Numaranız: $orderNumber',
+                  style: const TextStyle(color: Colors.black87),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
                 QrImageView(
                   data: qrString,
                   size: 200.0,
                   backgroundColor: Colors.white,
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  'Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.black),
-                ),
               ],
             ),
             actions: [
               TextButton(
-                child: const Text('Kapat',
+                child: const Text('Tamam',
                     style: TextStyle(color: Color(0xFFF9A602))),
                 onPressed: () {
                   Navigator.of(context).pop();
-                  CartManager.clearCart(); // Sepeti burada temizliyoruz
+                  CartManager.clearCart(); // Sepeti burada temizle
                   setState(() {}); // UI'yi güncellemek için
                 },
               ),
@@ -161,7 +193,7 @@ class _SepetScreenState extends State<SepetScreen> {
         },
       );
     } catch (e) {
-      showSnackbar(context, "QR kod oluşturulamadı: $e");
+      showSnackbar(context, "Sipariş oluşturulamadı: $e");
     }
   }
 
