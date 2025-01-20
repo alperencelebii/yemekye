@@ -124,8 +124,7 @@ class _SepetScreenState extends State<SepetScreen> {
       final qrString =
           'https://example.com/cart?cartId=${cartDoc.id}&shopId=${CartManager._shopId}';
 
-      CartManager.clearCart(); // Sepeti temizleme işlemi
-
+      // QR Kod gösterilirken sepet temizlenmiyor
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -153,14 +152,14 @@ class _SepetScreenState extends State<SepetScreen> {
                     style: TextStyle(color: Color(0xFFF9A602))),
                 onPressed: () {
                   Navigator.of(context).pop();
+                  CartManager.clearCart(); // Sepeti burada temizliyoruz
+                  setState(() {}); // UI'yi güncellemek için
                 },
               ),
             ],
           );
         },
       );
-
-      setState(() {}); // UI'yi güncellemek için
     } catch (e) {
       showSnackbar(context, "QR kod oluşturulamadı: $e");
     }
@@ -230,7 +229,8 @@ class _SepetScreenState extends State<SepetScreen> {
                                 },
                               ),
                               Text('${item['quantity']}',
-                                  style: const TextStyle(color: Colors.black87)),
+                                  style:
+                                      const TextStyle(color: Colors.black87)),
                               IconButton(
                                 icon: const Icon(Icons.add,
                                     color: Colors.black87),
