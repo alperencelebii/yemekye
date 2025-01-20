@@ -131,7 +131,7 @@ class _SepetScreenState extends State<SepetScreen> {
         builder: (BuildContext context) {
           return AlertDialog(
             backgroundColor: Colors.white,
-            title: const Text('QR Kod', style: TextStyle(color: Colors.white)),
+            title: const Text('QR Kod', style: TextStyle(color: Colors.black)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
@@ -143,7 +143,7 @@ class _SepetScreenState extends State<SepetScreen> {
                 const SizedBox(height: 10),
                 Text(
                   'Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}',
-                  style: const TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.black),
                 ),
               ],
             ),
@@ -173,13 +173,24 @@ class _SepetScreenState extends State<SepetScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF9A602),
         title: const Text('Sepet', style: TextStyle(color: Colors.black87)),
-        iconTheme: const IconThemeData(color: Colors.red),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: CartManager.cartItems.isEmpty
-          ? const Center(
-              child: Text(
-                'Sepetiniz boş.',
-                style: TextStyle(color: Colors.black87),
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.shopping_cart_outlined,
+                      size: 80, color: Color(0xFFF9A602)),
+                  SizedBox(height: 20),
+                  Text(
+                    'Sepetiniz boş.',
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             )
           : Column(
@@ -190,25 +201,28 @@ class _SepetScreenState extends State<SepetScreen> {
                     itemBuilder: (context, index) {
                       final item = CartManager.cartItems[index];
                       return Card(
-                        color: const Color(0xFF1D1D1D),
+                        color: const Color(0xFFF9A602),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                         margin: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 5),
-                        elevation: 2,
+                        elevation: 4,
                         child: ListTile(
                           title: Text(
                             item['name'],
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: Colors.black87),
                           ),
                           subtitle: Text(
                             "\u20ba${item['price']} x ${item['quantity']}",
-                            style: const TextStyle(color: Colors.grey),
+                            style: const TextStyle(color: Colors.black54),
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.remove,
-                                    color: Colors.white),
+                                    color: Colors.black87),
                                 onPressed: () {
                                   setState(() {
                                     CartManager.updateQuantity(index, -1);
@@ -216,10 +230,10 @@ class _SepetScreenState extends State<SepetScreen> {
                                 },
                               ),
                               Text('${item['quantity']}',
-                                  style: const TextStyle(color: Colors.white)),
+                                  style: const TextStyle(color: Colors.black87)),
                               IconButton(
-                                icon:
-                                    const Icon(Icons.add, color: Colors.white),
+                                icon: const Icon(Icons.add,
+                                    color: Colors.black87),
                                 onPressed: () {
                                   setState(() {
                                     CartManager.updateQuantity(index, 1);
@@ -240,9 +254,9 @@ class _SepetScreenState extends State<SepetScreen> {
                       Text(
                         "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}",
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Color(0xFFF9A602),
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -254,7 +268,7 @@ class _SepetScreenState extends State<SepetScreen> {
                         ),
                         onPressed: generateQRCode,
                         child: const Text('QR Kod Oluştur',
-                            style: TextStyle(color: Colors.white)),
+                            style: TextStyle(color: Colors.black87)),
                       ),
                     ],
                   ),

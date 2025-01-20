@@ -104,7 +104,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
               height: 200,
               decoration: BoxDecoration(
                 border: Border.all(
-                  color: Colors.blue,
+                  color: Color(0xFFF9A602),
                   width: 2.0,
                 ),
               ),
@@ -125,7 +125,7 @@ class _QRCodeScannerScreenState extends State<QRCodeScannerScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.blue,
+            color: Color(0xFFF9A602),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -199,7 +199,7 @@ class ConfirmCartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1D1D1D),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Onay Sayfası'),
         backgroundColor: const Color(0xFFF9A602),

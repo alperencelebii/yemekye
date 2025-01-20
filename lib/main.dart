@@ -46,7 +46,7 @@ class AuthStateHandler extends StatelessWidget {
           );
         }
         if (snapshot.hasData) {
-          return ExpandableNavbar();
+          return HomeScreen();
         } else {
           return LoginPage();
         }
