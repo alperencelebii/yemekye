@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class CreateShopPage extends StatefulWidget {
   @override
@@ -9,23 +12,69 @@ class CreateShopPage extends StatefulWidget {
 class _CreateShopPageState extends State<CreateShopPage> {
   final TextEditingController _shopNameController = TextEditingController();
   final TextEditingController _shopAddressController = TextEditingController();
-
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  File? _selectedImage;
+  bool _isUploading = false;
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImage() async {
+    if (_selectedImage == null) return null;
+
+    setState(() {
+      _isUploading = true;
+    });
+
+    try {
+      String fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      Reference storageRef =
+          FirebaseStorage.instance.ref().child('shop_images/$fileName');
+      UploadTask uploadTask = storageRef.putFile(_selectedImage!);
+      TaskSnapshot snapshot = await uploadTask;
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      setState(() {
+        _isUploading = false;
+      });
+
+      return downloadUrl;
+    } catch (e) {
+      setState(() {
+        _isUploading = false;
+      });
+      _showErrorMessage("Resim yüklenirken hata oluştu: $e");
+      return null;
+    }
+  }
 
   void _createShop() async {
     String shopName = _shopNameController.text.trim();
     String shopAddress = _shopAddressController.text.trim();
 
-    if (shopName.isEmpty || shopAddress.isEmpty) {
-      _showErrorMessage("Lütfen tüm alanları doldurun");
+    if (shopName.isEmpty || shopAddress.isEmpty || _selectedImage == null) {
+      _showErrorMessage("Lütfen tüm alanları doldurun ve bir resim seçin");
       return;
     }
 
     try {
+      String? imageUrl = await _uploadImage();
+      if (imageUrl == null) return;
+
       // Mağazayı Firestore'a kaydet
       await _firestore.collection('shops').add({
         'name': shopName,
         'address': shopAddress,
+        'image': imageUrl,
         'productid': [], // Başlangıçta ürünler boş olacak
       });
 
@@ -114,10 +163,32 @@ class _CreateShopPageState extends State<CreateShopPage> {
                   ),
                 ),
               ),
+              SizedBox(height: 20),
+              Center(
+                child: GestureDetector(
+                  onTap: _pickImage,
+                  child: _selectedImage == null
+                      ? Container(
+                          height: 150,
+                          width: 150,
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.orange),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(Icons.add_a_photo, color: Colors.orange),
+                        )
+                      : Image.file(
+                          _selectedImage!,
+                          height: 150,
+                          width: 150,
+                          fit: BoxFit.cover,
+                        ),
+                ),
+              ),
               SizedBox(height: 30),
               Center(
                 child: ElevatedButton(
-                  onPressed: _createShop,
+                  onPressed: _isUploading ? null : _createShop,
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                     backgroundColor: Colors.orange,
@@ -125,14 +196,16 @@ class _CreateShopPageState extends State<CreateShopPage> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  child: Text(
-                    "Mağaza Oluştur",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  child: _isUploading
+                      ? CircularProgressIndicator(color: Colors.white)
+                      : Text(
+                          "Mağaza Oluştur",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],

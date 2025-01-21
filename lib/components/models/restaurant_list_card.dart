@@ -37,7 +37,7 @@ class RestaurantListCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(14.0)),
         image: const DecorationImage(
-          image: AssetImage('assets/images/rest.jpg'), // Varsayılan görsel
+          image: AssetImage('assets/images/rest.jpg'),
           fit: BoxFit.cover,
         ),
       ),
@@ -51,12 +51,12 @@ class RestaurantListCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            restaurantName,
+            _getShortnames(restaurantName),
             style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
           Text(
-            restaurantAddress,
+            _getShortAddress(restaurantAddress),
             style: const TextStyle(fontSize: 10, color: Colors.grey),
           ),
           const SizedBox(height: 8),
@@ -71,5 +71,20 @@ class RestaurantListCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getShortAddress(String address) {
+    final words = address.split(' ');
+    if (words.length <= 2) {
+      return address;
+    }
+    return '${words[0]} ${words[1]}...';
+  }
+
+  String _getShortnames(String names) {
+    if (names.length <= 14) {
+      return names;
+    }
+    return '${names.substring(0, 14)}...';
   }
 }
