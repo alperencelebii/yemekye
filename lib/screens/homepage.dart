@@ -21,6 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
   late GoogleMapController _mapController;
   Set<Marker> _markers = {};
   LatLng? _currentPosition;
+  bool _isRequestingPermission = false;
 
   @override
   void initState() {
@@ -28,110 +29,72 @@ class _HomeScreenState extends State<HomeScreen> {
     _getCurrentLocation();
   }
 
-bool _isRequestingPermission = false;
+  Future<void> _getCurrentLocation() async {
+    if (_isRequestingPermission) return;
 
-Future<void> _getCurrentLocation() async {
-  if (_isRequestingPermission) {
-    return; // Zaten bir istek devam ediyorsa yeni istek başlatma.
-  }
+    _isRequestingPermission = true;
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) throw 'Konum servisleri kapalı.';
 
-  _isRequestingPermission = true; // İzin isteme işlemi başladı.
-
-  try {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Konum servislerini kontrol et
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw 'Location services are disabled.';
-    }
-
-    // Konum izni kontrolü
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        throw 'Location permissions are denied';
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          throw 'Konum izni reddedildi.';
+        }
       }
-    }
 
-    if (permission == LocationPermission.deniedForever) {
-      throw 'Location permissions are permanently denied, we cannot request permissions.';
-    }
+      if (permission == LocationPermission.deniedForever) {
+        throw 'Konum izinleri kalıcı olarak reddedildi.';
+      }
 
-    // Anlık konumu al
-    Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+      final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
 
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-    });
-
-    // Marker'ları yükle
-    _loadMarkersFromFirebase();
-
-    // Konum değişikliklerini dinle ve markerları güncelle
-    Geolocator.getPositionStream(
-        locationSettings: LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    )).listen((Position position) {
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
       });
 
-      // Marker'ları yeniden yükle
       _loadMarkersFromFirebase();
-    });
-  } catch (e) {
-    debugPrint(e.toString());
-  } finally {
-    _isRequestingPermission = false; // İzin işlemi tamamlandı.
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {
+      _isRequestingPermission = false;
+    }
   }
-}
 
-  // Firebase'den markerları alıp haritaya ekler
-// Firebase'den markerları alıp haritaya ekler
   Future<void> _loadMarkersFromFirebase() async {
     if (_currentPosition == null) return;
 
-    // Firebase 'markers' koleksiyonundan verileri al
     final snapshot =
         await FirebaseFirestore.instance.collection('markers').get();
 
     setState(() {
-      _markers.clear(); // Mevcut markerları temizle
+      _markers.clear();
       for (var doc in snapshot.docs) {
         final data = doc.data();
         final latitude = data['latitude'];
         final longitude = data['longitude'];
 
-        // Null kontrolü yapalım
         if (latitude != null && longitude != null) {
           final shopPosition = LatLng(latitude, longitude);
-
-          // Kullanıcı konumuyla marker arasındaki mesafeyi hesapla
-          double distanceInMeters = Geolocator.distanceBetween(
+          final distanceInMeters = Geolocator.distanceBetween(
             _currentPosition!.latitude,
             _currentPosition!.longitude,
             shopPosition.latitude,
             shopPosition.longitude,
           );
 
-          // 1 km (1000 metre) mesafedeki markerları ekle
           if (distanceInMeters <= 1000) {
-            final marker = Marker(
+            _markers.add(Marker(
               markerId: MarkerId(doc.id),
               position: shopPosition,
               infoWindow: InfoWindow(
-                title: data['title'] ??
-                    'Mağaza Adı Yok', // title yerine name kullandık
-                snippet: data['snippet'] ??
-                    'Adres Bilgisi Yok', // snippet yerine address kullandık
+                title: data['title'] ?? 'Mağaza Adı Yok',
+                snippet: data['snippet'] ?? 'Adres Bilgisi Yok',
               ),
-            );
-            _markers.add(marker);
+            ));
           }
         }
       }
@@ -152,20 +115,14 @@ Future<void> _getCurrentLocation() async {
               children: const [
                 Text(
                   'Merhaba',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'BeVietnamPro',
-                    color: Color(0xFF1D1D1D),
-                  ),
+                  style: TextStyle(fontSize: 16, color: Color(0xFF1D1D1D)),
                 ),
                 Text(
                   'Alperen',
                   style: TextStyle(
-                    fontSize: 24,
-                    fontFamily: 'BeVietnamPro',
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1D1D1D),
-                  ),
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1D1D1D)),
                 ),
               ],
             ),
@@ -191,55 +148,9 @@ Future<void> _getCurrentLocation() async {
               const Text(
                 'Yakınından ucuza \nYemek bul..',
                 style: TextStyle(
-                  fontFamily: 'BeVietnamPro',
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                   color: Color(0xFF1D1D1D),
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Arama Çubuğu
-              Container(
-                height: 50,
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    SvgPicture.asset(
-                      'assets/icons/search.svg',
-                      width: 20,
-                      height: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Ara',
-                          hintStyle: TextStyle(
-                            color: Color(0xFFB9C3C3),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            searchQuery = value;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
                 ),
               ),
               const SizedBox(height: 10),
@@ -247,7 +158,9 @@ Future<void> _getCurrentLocation() async {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
-                  children: List.generate(categories.length, (index) {
+                  children: categories.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final category = entry.value;
                     final isSelected = selectedCategoryIndex == index;
                     return GestureDetector(
                       onTap: () {
@@ -268,9 +181,8 @@ Future<void> _getCurrentLocation() async {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          categories[index],
+                          category,
                           style: TextStyle(
-                            fontFamily: 'BeVietnamPro',
                             fontWeight: FontWeight.bold,
                             color: isSelected
                                 ? Colors.white
@@ -279,14 +191,13 @@ Future<void> _getCurrentLocation() async {
                         ),
                       ),
                     );
-                  }),
+                  }).toList(),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
                 'Popüler Restoranlar',
                 style: TextStyle(
-                  fontFamily: 'BeVietnamPro',
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
@@ -300,7 +211,6 @@ Future<void> _getCurrentLocation() async {
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 2,
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     ),
@@ -312,18 +222,16 @@ Future<void> _getCurrentLocation() async {
                         onMapCreated: (controller) {
                           _mapController = controller;
                         },
-                        markers:
-                            _markers, // Firebase'ten çekilen markerlar burada görünecek
+                        markers: _markers,
                         initialCameraPosition: CameraPosition(
                           target: _currentPosition!,
                           zoom: 14.0,
                         ),
                         myLocationEnabled: true,
-                        myLocationButtonEnabled: true,
                       ),
               ),
               const SizedBox(height: 10),
-              // Restoranlar
+              // Restoranlar Listesi
               StreamBuilder<QuerySnapshot>(
                 stream:
                     FirebaseFirestore.instance.collection('shops').snapshots(),
@@ -343,10 +251,15 @@ Future<void> _getCurrentLocation() async {
                       scrollDirection: Axis.horizontal,
                       itemCount: shopDocs.length,
                       itemBuilder: (context, index) {
-                        final shopData = shopDocs[index];
+                        final shopData =
+                            shopDocs[index].data() as Map<String, dynamic>;
                         final shopName = shopData['name'] ?? 'Mağaza Adı Yok';
                         final shopAddress =
                             shopData['address'] ?? 'Adres Bilgisi Yok';
+                        final shopImagePath = shopData['image']?.isNotEmpty ==
+                                true
+                            ? shopData['image']
+                            : 'assets/images/rest.jpg';
 
                         return GestureDetector(
                           onTap: () {
@@ -365,6 +278,7 @@ Future<void> _getCurrentLocation() async {
                             child: RestaurantListCard(
                               restaurantName: shopName,
                               restaurantAddress: shopAddress,
+                              restaurantImagePath: shopImagePath,
                             ),
                           ),
                         );
