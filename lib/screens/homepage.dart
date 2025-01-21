@@ -28,20 +28,53 @@ class _HomeScreenState extends State<HomeScreen> {
     _getCurrentLocation();
   }
 
+<<<<<<< HEAD
   Future<void> _getCurrentLocation() async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       return Future.error('Location services are disabled.');
+=======
+bool _isRequestingPermission = false;
+
+Future<void> _getCurrentLocation() async {
+  if (_isRequestingPermission) {
+    return; // Zaten bir istek devam ediyorsa yeni istek başlatma.
+  }
+
+  _isRequestingPermission = true; // İzin isteme işlemi başladı.
+
+  try {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Konum servislerini kontrol et
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw 'Location services are disabled.';
+>>>>>>> f59dd76f169a3f2791dea02a10038f1847030b55
     }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
+<<<<<<< HEAD
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         return Future.error('Location permissions are denied.');
       }
     }
 
+=======
+      if (permission == LocationPermission.denied) {
+        throw 'Location permissions are denied';
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw 'Location permissions are permanently denied, we cannot request permissions.';
+    }
+
+    // Anlık konumu al
+>>>>>>> f59dd76f169a3f2791dea02a10038f1847030b55
     Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
 
@@ -50,7 +83,29 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     _loadMarkersFromFirebase();
+<<<<<<< HEAD
+=======
+
+    // Konum değişikliklerini dinle ve markerları güncelle
+    Geolocator.getPositionStream(
+        locationSettings: LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+    )).listen((Position position) {
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+      });
+
+      // Marker'ları yeniden yükle
+      _loadMarkersFromFirebase();
+    });
+  } catch (e) {
+    debugPrint(e.toString());
+  } finally {
+    _isRequestingPermission = false; // İzin işlemi tamamlandı.
+>>>>>>> f59dd76f169a3f2791dea02a10038f1847030b55
   }
+}
 
   Future<void> _loadMarkersFromFirebase() async {
     if (_currentPosition == null) return;
