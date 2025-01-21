@@ -17,6 +17,17 @@ class _CreateShopPageState extends State<CreateShopPage> {
   File? _selectedImage;
   bool _isUploading = false;
 
+  // Kategoriler
+  final List<String> _categories = [
+    'Fast Food',
+    'Kahvaltı',
+    'Tatlı',
+    'İçecek',
+    'Pasta',
+    'Deniz Ürünleri'
+  ];
+  final List<String> _selectedCategories = [];
+
   Future<void> _pickImage() async {
     final pickedFile =
         await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -61,8 +72,11 @@ class _CreateShopPageState extends State<CreateShopPage> {
     String shopName = _shopNameController.text.trim();
     String shopAddress = _shopAddressController.text.trim();
 
-    if (shopName.isEmpty || shopAddress.isEmpty || _selectedImage == null) {
-      _showErrorMessage("Lütfen tüm alanları doldurun ve bir resim seçin");
+    if (shopName.isEmpty ||
+        shopAddress.isEmpty ||
+        _selectedImage == null ||
+        _selectedCategories.isEmpty) {
+      _showErrorMessage("Lütfen tüm alanları doldurun ve kategori seçin.");
       return;
     }
 
@@ -75,6 +89,7 @@ class _CreateShopPageState extends State<CreateShopPage> {
         'name': shopName,
         'address': shopAddress,
         'image': imageUrl,
+        'categories': _selectedCategories, // Seçilen kategoriler
         'productid': [], // Başlangıçta ürünler boş olacak
       });
 
@@ -184,6 +199,32 @@ class _CreateShopPageState extends State<CreateShopPage> {
                           fit: BoxFit.cover,
                         ),
                 ),
+              ),
+              SizedBox(height: 30),
+              Text(
+                "Kategoriler:",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange[700],
+                ),
+              ),
+              Column(
+                children: _categories.map((category) {
+                  return CheckboxListTile(
+                    title: Text(category),
+                    value: _selectedCategories.contains(category),
+                    onChanged: (bool? isChecked) {
+                      setState(() {
+                        if (isChecked == true) {
+                          _selectedCategories.add(category);
+                        } else {
+                          _selectedCategories.remove(category);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
               ),
               SizedBox(height: 30),
               Center(
