@@ -28,15 +28,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _getCurrentLocation();
   }
 
-  // Konum alımı ve markerların Firebase'ten yüklenmesi
-  Future<void> _getCurrentLocation() async {
+bool _isRequestingPermission = false;
+
+Future<void> _getCurrentLocation() async {
+  if (_isRequestingPermission) {
+    return; // Zaten bir istek devam ediyorsa yeni istek başlatma.
+  }
+
+  _isRequestingPermission = true; // İzin isteme işlemi başladı.
+
+  try {
     bool serviceEnabled;
     LocationPermission permission;
 
     // Konum servislerini kontrol et
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      return Future.error('Location services are disabled.');
+      throw 'Location services are disabled.';
     }
 
     // Konum izni kontrolü
@@ -44,13 +52,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
+        throw 'Location permissions are denied';
       }
     }
 
     if (permission == LocationPermission.deniedForever) {
-      return Future.error(
-          'Location permissions are permanently denied, we cannot request permissions.');
+      throw 'Location permissions are permanently denied, we cannot request permissions.';
     }
 
     // Anlık konumu al
@@ -68,8 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Geolocator.getPositionStream(
         locationSettings: LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter:
-          10, // Konum değişiminde 10 metrelik bir fark olduğunda tetiklenir
+      distanceFilter: 10,
     )).listen((Position position) {
       setState(() {
         _currentPosition = LatLng(position.latitude, position.longitude);
@@ -78,7 +84,12 @@ class _HomeScreenState extends State<HomeScreen> {
       // Marker'ları yeniden yükle
       _loadMarkersFromFirebase();
     });
+  } catch (e) {
+    debugPrint(e.toString());
+  } finally {
+    _isRequestingPermission = false; // İzin işlemi tamamlandı.
   }
+}
 
   // Firebase'den markerları alıp haritaya ekler
 // Firebase'den markerları alıp haritaya ekler
