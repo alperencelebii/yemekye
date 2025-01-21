@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:yemekye/screens/addproduct.dart';
-import 'package:yemekye/screens/restaurant_details.dart';
-import 'package:yemekye/components/models/restaurant_list_card.dart';
+import 'addproduct.dart';
+import 'restaurant_details.dart';
+import '../components/models/restaurant_list_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -15,7 +15,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final List<String> categories = ['Pastane', 'Kafe', 'FNK', 'Döner'];
+  final categories = ['Pastane', 'Kafe', 'FNK', 'Döner'];
   int selectedCategoryIndex = 0;
   String searchQuery = '';
   late GoogleMapController _mapController;
@@ -28,346 +28,212 @@ class _HomeScreenState extends State<HomeScreen> {
     _getCurrentLocation();
   }
 
-<<<<<<< HEAD
   Future<void> _getCurrentLocation() async {
-    if (!await Geolocator.isLocationServiceEnabled()) {
-      return Future.error('Location services are disabled.');
-=======
-bool _isRequestingPermission = false;
+    if (!await Geolocator.isLocationServiceEnabled()) return;
 
-Future<void> _getCurrentLocation() async {
-  if (_isRequestingPermission) {
-    return; // Zaten bir istek devam ediyorsa yeni istek başlatma.
-  }
-
-  _isRequestingPermission = true; // İzin isteme işlemi başladı.
-
-  try {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Konum servislerini kontrol et
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw 'Location services are disabled.';
->>>>>>> f59dd76f169a3f2791dea02a10038f1847030b55
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
+    var permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-<<<<<<< HEAD
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
-        return Future.error('Location permissions are denied.');
-      }
+      if (permission == LocationPermission.deniedForever) return;
     }
 
-=======
-      if (permission == LocationPermission.denied) {
-        throw 'Location permissions are denied';
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      throw 'Location permissions are permanently denied, we cannot request permissions.';
-    }
-
-    // Anlık konumu al
->>>>>>> f59dd76f169a3f2791dea02a10038f1847030b55
-    Position position = await Geolocator.getCurrentPosition(
+    final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
-
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-    });
-
+    _currentPosition = LatLng(position.latitude, position.longitude);
     _loadMarkersFromFirebase();
-<<<<<<< HEAD
-=======
-
-    // Konum değişikliklerini dinle ve markerları güncelle
-    Geolocator.getPositionStream(
-        locationSettings: LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10,
-    )).listen((Position position) {
-      setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
-      });
-
-      // Marker'ları yeniden yükle
-      _loadMarkersFromFirebase();
-    });
-  } catch (e) {
-    debugPrint(e.toString());
-  } finally {
-    _isRequestingPermission = false; // İzin işlemi tamamlandı.
->>>>>>> f59dd76f169a3f2791dea02a10038f1847030b55
   }
-}
 
   Future<void> _loadMarkersFromFirebase() async {
     if (_currentPosition == null) return;
 
     final snapshot =
         await FirebaseFirestore.instance.collection('markers').get();
-
-    setState(() {
-      _markers = snapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            final latitude = data['latitude'];
-            final longitude = data['longitude'];
-            if (latitude != null && longitude != null) {
-              final shopPosition = LatLng(latitude, longitude);
-              final distance = Geolocator.distanceBetween(
-                _currentPosition!.latitude,
-                _currentPosition!.longitude,
-                shopPosition.latitude,
-                shopPosition.longitude,
-              );
-              if (distance <= 1000) {
-                return Marker(
-                  markerId: MarkerId(doc.id),
-                  position: shopPosition,
-                  infoWindow: InfoWindow(
-                    title: data['title'] ?? 'Mağaza Adı Yok',
-                    snippet: data['snippet'] ?? 'Adres Bilgisi Yok',
-                  ),
-                );
-              }
-            }
-            return null;
-          })
-          .whereType<Marker>()
-          .toSet();
-    });
+    _markers = snapshot.docs
+        .map((doc) {
+          final data = doc.data();
+          final shopPosition = LatLng(data['latitude'], data['longitude']);
+          if (Geolocator.distanceBetween(
+                  _currentPosition!.latitude,
+                  _currentPosition!.longitude,
+                  shopPosition.latitude,
+                  shopPosition.longitude) <=
+              1000) {
+            return Marker(
+              markerId: MarkerId(doc.id),
+              position: shopPosition,
+              infoWindow: InfoWindow(
+                  title: data['title'] ?? 'Mağaza Adı Yok',
+                  snippet: data['snippet'] ?? 'Adres Bilgisi Yok'),
+            );
+          }
+          return null;
+        })
+        .whereType<Marker>()
+        .toSet();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: _buildAppBar(),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Yakınından ucuza \nYemek bul..',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
+            const Text('Yakınından ucuza \nYemek bul..',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
             const SizedBox(height: 10),
             _buildSearchBar(),
             const SizedBox(height: 10),
             _buildCategories(),
             const SizedBox(height: 20),
-            const Text(
-              'Popüler Restoranlar',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
+            const Text('Popüler Restoranlar',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 10),
-            _buildMap(size),
+            _buildMap(),
             const SizedBox(height: 10),
-            _buildRestaurantList(),
+            Expanded(child: _buildRestaurantList()),
           ],
         ),
       ),
     );
   }
 
-  AppBar _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.white,
-      elevation: 0,
-      title: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                'Merhaba',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-              Text(
-                'Alperen',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          IconButton(
-            icon: SvgPicture.asset('assets/icons/Vector.svg'),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddProduct()),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  AppBar _buildAppBar() => AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text('Merhaba',
+                      style: TextStyle(fontSize: 16, color: Colors.black)),
+                  Text('Alperen',
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black)),
+                ]),
+            const Spacer(),
+            IconButton(
+              icon: SvgPicture.asset('assets/icons/Vector.svg'),
+              onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const AddProduct())),
+            ),
+          ],
+        ),
+      );
 
-  Widget _buildSearchBar() {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          SvgPicture.asset(
-            'assets/icons/search.svg',
-            width: 20,
-            height: 20,
-          ),
+  Widget _buildSearchBar() => Container(
+        height: 50,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          SvgPicture.asset('assets/icons/search.svg', width: 20, height: 20),
           const SizedBox(width: 10),
           Expanded(
-            child: TextField(
-              decoration: const InputDecoration(
+              child: TextField(
+            decoration: const InputDecoration(
                 border: InputBorder.none,
                 hintText: 'Ara',
-                hintStyle: TextStyle(color: Colors.grey),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+                hintStyle: TextStyle(color: Colors.grey)),
+            onChanged: (value) => setState(() => searchQuery = value),
+          )),
+        ]),
+      );
 
-  Widget _buildCategories() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories.asMap().entries.map((entry) {
-          final index = entry.key;
-          final category = entry.value;
-          final isSelected = index == selectedCategoryIndex;
-          return GestureDetector(
-            onTap: () => setState(() => selectedCategoryIndex = index),
-            child: Container(
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.orange : Colors.grey[200],
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                category,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: isSelected ? Colors.white : Colors.grey,
+  Widget _buildCategories() => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: categories.asMap().entries.map((entry) {
+            final index = entry.key;
+            final isSelected = index == selectedCategoryIndex;
+            return GestureDetector(
+              onTap: () => setState(() => selectedCategoryIndex = index),
+              child: Container(
+                margin: const EdgeInsets.only(right: 10),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.orange : Colors.grey[200],
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                child: Text(entry.value,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: isSelected ? Colors.white : Colors.grey)),
               ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
+            );
+          }).toList(),
+        ),
+      );
 
-  Widget _buildMap(Size size) {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: _currentPosition == null
-          ? const Center(child: CircularProgressIndicator())
-          : GoogleMap(
-              onMapCreated: (controller) => _mapController = controller,
-              markers: _markers,
-              initialCameraPosition: CameraPosition(
-                target: _currentPosition!,
-                zoom: 14.0,
+  Widget _buildMap() => Container(
+        height: 200,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, 2)),
+          ],
+        ),
+        child: _currentPosition == null
+            ? const Center(child: CircularProgressIndicator())
+            : GoogleMap(
+                onMapCreated: (controller) => _mapController = controller,
+                markers: _markers,
+                initialCameraPosition:
+                    CameraPosition(target: _currentPosition!, zoom: 14.0),
+                myLocationEnabled: true,
               ),
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-            ),
-    );
-  }
+      );
 
-  Widget _buildRestaurantList() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('shops').snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Text('Restoran bulunamadı.');
-        }
-        final shopDocs = snapshot.data!.docs;
-        return SizedBox(
-          height: 200,
-          child: ListView.builder(
+  Widget _buildRestaurantList() => StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('shops').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Text('Restoran bulunamadı.');
+          }
+          return ListView(
             scrollDirection: Axis.horizontal,
-            itemCount: shopDocs.length,
-            itemBuilder: (context, index) {
-              final shopData = shopDocs[index];
+            children: snapshot.data!.docs.map((doc) {
               return GestureDetector(
-                onTap: () {
-                  Navigator.push(
+                onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => RestaurantDetails(
-                        shopName: shopData['name'] ?? 'Mağaza Adı Yok',
-                        shopAddress: shopData['address'] ?? 'Adres Bilgisi Yok',
-                      ),
-                    ),
-                  );
-                },
+                        builder: (_) => RestaurantDetails(
+                              shopName: doc['name'] ?? 'Mağaza Adı Yok',
+                              shopAddress:
+                                  doc['address'] ?? 'Adres Bilgisi Yok',
+                            ))),
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
+                  padding: const EdgeInsets.only(right: 8),
                   child: RestaurantListCard(
-                    restaurantName: shopData['name'] ?? 'Mağaza Adı Yok',
-                    restaurantAddress:
-                        shopData['address'] ?? 'Adres Bilgisi Yok',
+                    restaurantName: doc['name'] ?? 'Mağaza Adı Yok',
+                    restaurantAddress: doc['address'] ?? 'Adres Bilgisi Yok',
                   ),
                 ),
               );
-            },
-          ),
-        );
-      },
-    );
-  }
+            }).toList(),
+          );
+        },
+      );
 }

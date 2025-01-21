@@ -44,40 +44,32 @@ class RestaurantListCard extends StatelessWidget {
     );
   }
 
-Widget _buildInfo() {
-  return Padding(
-    padding: const EdgeInsets.all(8.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          restaurantName,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          _getShortAddress(restaurantAddress),
-          style: const TextStyle(fontSize: 10, color: Colors.grey),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          'Açık',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF22BA61),
+  Widget _buildInfo() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            restaurantName,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-// Adresi kısaltan fonksiyon
-String _getShortAddress(String address) {
-  final words = address.split(' '); // Adresi boşluklarla böler
-  if (words.length <= 2) {
-    return address; // Eğer 2 kelime veya daha azsa, adresi olduğu gibi döndür
+          const SizedBox(height: 4),
+          Text(
+            restaurantAddress,
+            style: const TextStyle(fontSize: 10, color: Colors.grey),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Açık',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF22BA61),
+            ),
+          ),
+        ],
+      ),
+    );
   }
-  return '${words[0]} ${words[1]}...'; // İlk iki kelimeyi al ve "..." ekle
-}}
+}
