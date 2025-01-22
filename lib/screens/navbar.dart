@@ -22,16 +22,14 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'assets/icons/pie.svg',
     'assets/icons/clock.svg',
     'assets/icons/li_user.svg',
-    'assets/icons/li_user.svg',
   ];
 
   final List<String> _labels = [
     'Home',
     'Search',
     'Favorites',
+    'History',
     'Profile',
-    'Settings',
-    'Settings',
   ];
 
   final List<Widget> _pages = [
@@ -40,32 +38,65 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     AdminPanel(),
     QRCodeScannerScreen(),
     SepetScreen(),
-    Yonetici(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex], // Seçili sayfa burada gösteriliyor
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex, // Seçili öğe
-        type: BottomNavigationBarType.fixed,
-        items: List.generate(_icons.length, (index) {
-          return BottomNavigationBarItem(
-            icon: SvgPicture.asset(
-              _icons[index],
-              width: 24,
-              height: 24,
-              color: _currentIndex == index ? Colors.orange : Colors.grey,
-            ),
-            label: _labels[index],
-          );
-        }),
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+      body: _pages[_currentIndex],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color.fromARGB(255, 255, 255, 255), Color.fromARGB(255, 255, 255, 255)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: List.generate(_icons.length, (index) {
+              final isSelected = _currentIndex == index;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Color(0xFFF9A602) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: Row(
+                    children: [
+                      SvgPicture.asset(
+                        _icons[index],
+                        width: 24,
+                        height: 24,
+                        color: isSelected ? Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
+                      ),
+                      if (isSelected)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Text(
+                            _labels[index],
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 255, 255, 255),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
       ),
     );
   }
