@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:yemekye/loginregister/shop_register.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:yemekye/screens/AddUsers.dart';
 
 class Yonetici extends StatefulWidget {
@@ -42,7 +43,8 @@ class _YoneticiState extends State<Yonetici> {
           ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('shops').snapshots(),
+              stream:
+                  FirebaseFirestore.instance.collection('shops').snapshots(),
               builder: (context, shopSnapshot) {
                 if (shopSnapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -98,11 +100,32 @@ class _YoneticiState extends State<Yonetici> {
                           shopData['address'] ?? "Adres Bilgisi Yok",
                           style: TextStyle(fontSize: 14),
                         ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            deleteShop(shopId);
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon:
+                                  Icon(Icons.location_pin, color: Colors.blue),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => MarkerManagementPage(
+                                      shopId: shopId,
+                                      shopName: shopData['name'],
+                                      shopAddress: shopData['address'],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                deleteShop(shopId);
+                              },
+                            ),
+                          ],
                         ),
                         onTap: () {
                           Navigator.push(
@@ -122,24 +145,101 @@ class _YoneticiState extends State<Yonetici> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CreateShopPage(), // shop_register.dart'daki CreateShopPage'e yönlendiriyor
-            ),
-          );
-        },
-        backgroundColor: Colors.orange,
-        child: Icon(Icons.add),
-      ),
     );
   }
-      
 
   void deleteShop(String shopId) async {
     await FirebaseFirestore.instance.collection('shops').doc(shopId).delete();
+  }
+}
+
+class MarkerManagementPage extends StatefulWidget {
+  final String shopId;
+  final String? shopName;
+  final String? shopAddress;
+
+  MarkerManagementPage({required this.shopId, this.shopName, this.shopAddress});
+
+  @override
+  _MarkerManagementPageState createState() => _MarkerManagementPageState();
+}
+
+class _MarkerManagementPageState extends State<MarkerManagementPage> {
+  late GoogleMapController _mapController;
+  final Set<Marker> _markers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMarkers();
+  }
+
+  Future<void> _loadMarkers() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection('markers')
+        .where('shopId', isEqualTo: widget.shopId)
+        .get();
+
+    setState(() {
+      _markers.clear();
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final marker = Marker(
+          markerId: MarkerId(doc.id),
+          position: LatLng(data['latitude'], data['longitude']),
+          infoWindow: InfoWindow(
+            title: data['title'],
+            snippet: data['snippet'],
+          ),
+        );
+        _markers.add(marker);
+      }
+    });
+  }
+
+  Future<void> _addMarker(LatLng position) async {
+    final markerId = 'marker_${DateTime.now().millisecondsSinceEpoch}';
+    final marker = Marker(
+      markerId: MarkerId(markerId),
+      position: position,
+      infoWindow: InfoWindow(
+        title: widget.shopName,
+        snippet: widget.shopAddress,
+      ),
+    );
+
+    setState(() {
+      _markers.add(marker);
+    });
+
+    await FirebaseFirestore.instance.collection('markers').doc(markerId).set({
+      'latitude': position.latitude,
+      'longitude': position.longitude,
+      'shopId': widget.shopId,
+      'title': widget.shopName,
+      'snippet': widget.shopAddress,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("${widget.shopName} Marker Yönetimi"),
+        backgroundColor: Colors.orange,
+      ),
+      body: GoogleMap(
+        onMapCreated: (controller) => _mapController = controller,
+        markers: _markers,
+        initialCameraPosition: CameraPosition(
+          target: LatLng(39.92077, 32.85411), // Default konum
+          zoom: 14,
+        ),
+        onTap: _addMarker,
+        myLocationEnabled: true,
+        myLocationButtonEnabled: true,
+      ),
+    );
   }
 }
 
@@ -152,25 +252,25 @@ class ShopDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: Text("Mağaza Detayları"),
-  backgroundColor: Colors.orange,
-  actions: [
-    IconButton(
-      icon: Icon(Icons.add),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => AddUserPage(shopId: shopId),
+        title: Text("Mağaza Detayları"),
+        backgroundColor: Colors.orange,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddUserPage(shopId: shopId),
+                ),
+              );
+            },
           ),
-        );
-      },
-    ),
-  ],
-),
-
+        ],
+      ),
       body: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance.collection('shops').doc(shopId).get(),
+        future:
+            FirebaseFirestore.instance.collection('shops').doc(shopId).get(),
         builder: (context, shopSnapshot) {
           if (shopSnapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -216,8 +316,8 @@ class ShopDetailsPage extends StatelessWidget {
                       return ListView.builder(
                         itemCount: shopProducts.length,
                         itemBuilder: (context, index) {
-                          final productData =
-                              shopProducts[index].data() as Map<String, dynamic>;
+                          final productData = shopProducts[index].data()
+                              as Map<String, dynamic>;
                           final productId = productData['productid'];
 
                           return FutureBuilder<DocumentSnapshot>(
@@ -231,8 +331,7 @@ class ShopDetailsPage extends StatelessWidget {
                                 return CircularProgressIndicator();
                               }
 
-                              final productDetails = productDetailsSnapshot
-                                  .data
+                              final productDetails = productDetailsSnapshot.data
                                   ?.data() as Map<String, dynamic>?;
 
                               if (productDetails == null) {
