@@ -324,7 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       final shopDocs = snapshot.data!.docs;
 
                       return SizedBox(
-                        height: 160, // Kartların yüksekliğiyle uyumlu olmalı
+                        height: 105, // Kartların yüksekliğiyle uyumlu olmalı
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: shopDocs.length,
