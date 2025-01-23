@@ -22,7 +22,6 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'assets/icons/pie.svg',
     'assets/icons/clock.svg',
     'assets/icons/li_user.svg',
-    'assets/icons/li_user.svg',
   ];
 
   final List<String> _labels = [
@@ -30,7 +29,6 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'Search',
     'Favorites',
     'History',
-    'Profile',
     'Profile',
   ];
 

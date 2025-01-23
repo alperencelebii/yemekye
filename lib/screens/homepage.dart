@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:yemekye/components/models/yatay_restaurant_card.dart';
 import 'package:yemekye/screens/addproduct.dart';
 import 'package:yemekye/screens/restaurant_details.dart';
 import 'package:yemekye/components/models/restaurant_list_card.dart';
@@ -21,51 +20,61 @@ class _HomeScreenState extends State<HomeScreen> {
   late GoogleMapController _mapController;
   Set<Marker> _markers = {};
   LatLng? _currentPosition;
-  List<Map<String, dynamic>> nearbyShops = [];
-  bool showRestaurants = false;
-
   @override
   void initState() {
     super.initState();
-    _startLocationStream();
+    _getCurrentLocation();
   }
 
   bool _isRequestingPermission = false;
-  void _startLocationStream() async {
-    if (_isRequestingPermission) return;
-
-    _isRequestingPermission = true;
+  Future<void> _getCurrentLocation() async {
+    if (_isRequestingPermission) {
+      return; // Zaten bir istek devam ediyorsa yeni istek başlatma.
+    }
+    _isRequestingPermission = true; // İzin isteme işlemi başladı.
     try {
-      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) throw 'Konum servisleri kapalı.';
-
-      var permission = await Geolocator.checkPermission();
+      bool serviceEnabled;
+      LocationPermission permission;
+      // Konum servislerini kontrol et
+      serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        throw 'Location services are disabled.';
+      }
+      // Konum izni kontrolü
+      permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          throw 'Konum izni reddedildi.';
+          throw 'Location permissions are denied';
         }
       }
-
       if (permission == LocationPermission.deniedForever) {
-        throw 'Konum izinleri kalıcı olarak reddedildi.';
+        throw 'Location permissions are permanently denied, we cannot request permissions.';
       }
-
+      // Anlık konumu al
+      Position position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+      });
+      // Marker'ları yükle
+      _loadMarkersFromFirebase();
+      // Konum değişikliklerini dinle ve markerları güncelle
       Geolocator.getPositionStream(
-        locationSettings: LocationSettings(
-          accuracy: LocationAccuracy.high,
-          distanceFilter: 10,
-        ),
-      ).listen((Position position) {
+          locationSettings: LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      )).listen((Position position) {
         setState(() {
           _currentPosition = LatLng(position.latitude, position.longitude);
         });
+        // Marker'ları yeniden yükle
         _loadMarkersFromFirebase();
       });
     } catch (e) {
       debugPrint(e.toString());
     } finally {
-      _isRequestingPermission = false;
+      _isRequestingPermission = false; // İzin işlemi tamamlandı.
     }
   }
 
@@ -73,62 +82,42 @@ class _HomeScreenState extends State<HomeScreen> {
 // Firebase'den markerları alıp haritaya ekler
   Future<void> _loadMarkersFromFirebase() async {
     if (_currentPosition == null) return;
-
+    // Firebase 'markers' koleksiyonundan verileri al
     final snapshot =
         await FirebaseFirestore.instance.collection('markers').get();
-
     setState(() {
-      _markers.clear();
-      nearbyShops.clear();
-    });
-
-    for (var doc in snapshot.docs) {
-      final data = doc.data();
-      final latitude = data['latitude'];
-      final longitude = data['longitude'];
-      final shopId = data['shopId']; // shopId alınır
-
-      if (latitude != null && longitude != null) {
-        final shopPosition = LatLng(latitude, longitude);
-        final distanceInMeters = Geolocator.distanceBetween(
-          _currentPosition!.latitude,
-          _currentPosition!.longitude,
-          shopPosition.latitude,
-          shopPosition.longitude,
-        );
-
-        if (distanceInMeters <= 1000) {
-          final shopSnapshot = await FirebaseFirestore.instance
-              .collection('shops')
-              .doc(shopId)
-              .get();
-
-          final shopData = shopSnapshot.data();
-          final shopImage = shopData?['image'] ?? 'assets/images/rest.jpg';
-          final shopName = shopData?['name'] ?? 'Mağaza Adı Yok';
-          final shopAddress = shopData?['address'] ?? 'Adres Bilgisi Yok';
-
-          setState(() {
-            _markers.add(Marker(
+      _markers.clear(); // Mevcut markerları temizle
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final latitude = data['latitude'];
+        final longitude = data['longitude'];
+        // Null kontrolü yapalım
+        if (latitude != null && longitude != null) {
+          final shopPosition = LatLng(latitude, longitude);
+          // Kullanıcı konumuyla marker arasındaki mesafeyi hesapla
+          double distanceInMeters = Geolocator.distanceBetween(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+            shopPosition.latitude,
+            shopPosition.longitude,
+          );
+          // 1 km (1000 metre) mesafedeki markerları ekle
+          if (distanceInMeters <= 1000) {
+            final marker = Marker(
               markerId: MarkerId(doc.id),
               position: shopPosition,
               infoWindow: InfoWindow(
-                title: shopName,
-                snippet: shopAddress,
+                title: data['title'] ??
+                    'Mağaza Adı Yok', // title yerine name kullandık
+                snippet: data['snippet'] ??
+                    'Adres Bilgisi Yok', // snippet yerine address kullandık
               ),
-            ));
-            nearbyShops.add({
-              'name': shopName,
-              'address': shopAddress,
-              'image': shopImage,
-              'distance': (distanceInMeters / 1000).toStringAsFixed(2),
-              'latitude': latitude,
-              'longitude': longitude,
-            });
-          });
+            );
+            _markers.add(marker);
+          }
         }
       }
-    }
+    });
   }
 
   @override
@@ -276,7 +265,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
+              const Text(
+                'Popüler Restoranlar',
+                style: TextStyle(
+                  fontFamily: 'BeVietnamPro',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(height: 10),
               // Harita
               Container(
                 height: 200,
@@ -308,75 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
               ),
               const SizedBox(height: 10),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Popüler Restoranlar',
-                    style: TextStyle(
-                      fontFamily: 'BeVietnamPro',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      // "Göster" butonuna basıldığında restoranları açıp kapatma
-                      setState(() {
-                        showRestaurants = !showRestaurants;
-                      });
-                    },
-                    child: Text(
-                      showRestaurants ? 'Gizle' : 'Göster',
-                      style: const TextStyle(
-                        color: Colors.blue, // Buton metni rengi
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-// Restoranlar
-              if (showRestaurants)
-                nearbyShops.isEmpty
-                    ? const Text(
-                        'Yakınlarda restoran bulunamadı.',
-                        style: TextStyle(color: Colors.black),
-                      )
-                    : SizedBox(
-                        height: 105,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: nearbyShops.length,
-                          itemBuilder: (context, index) {
-                            final shop = nearbyShops[index];
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 10),
-                              child: YatayRestaurantCard(
-                                shopName: shop['name'],
-                                shopAddress: shop['address'],
-                                shopImagePath: shop['image'],
-                                userLocation: _currentPosition ?? LatLng(0, 0),
-                                shopLatitude: shop['latitude'] ?? 0.0,
-                                shopLongitude: shop['longitude'] ?? 0.0,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => RestaurantDetails(
-                                        shopName: shop['name'],
-                                        shopAddress: shop['address'],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ),
+              // Restoranlar
             ],
           ),
         ),
