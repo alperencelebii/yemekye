@@ -36,7 +36,6 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
 
   final List<Widget> _pages = [
     HomeScreen(),
-    GoogleMapsExample(),
     AdminPanel(),
     QRCodeScannerScreen(),
     SepetScreen(),

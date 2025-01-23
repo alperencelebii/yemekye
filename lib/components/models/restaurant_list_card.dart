@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 class RestaurantListCard extends StatelessWidget {
   final String restaurantName;
   final String restaurantAddress;
-  final String restaurantImagePath; // Yeni parametre
+  final String restaurantImagePath;
+  // Yeni parametre
 
   const RestaurantListCard({
     Key? key,
@@ -34,21 +35,23 @@ class RestaurantListCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-  return Container(
-    width: 125,
-    height: 120,
-    decoration: BoxDecoration(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(14.0)),
-      image: DecorationImage(
-        image: restaurantImagePath.startsWith('http') && restaurantImagePath.isNotEmpty
-            ? NetworkImage(restaurantImagePath) // Firebase'den gelen URL geçerli
-            : const AssetImage('assets/images/sondilim.png') as ImageProvider, // Varsayılan görsel
-        fit: BoxFit.cover,
+    return Container(
+      width: 125,
+      height: 120,
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(14.0)),
+        image: DecorationImage(
+          image: restaurantImagePath.startsWith('http') &&
+                  restaurantImagePath.isNotEmpty
+              ? NetworkImage(
+                  restaurantImagePath) // Firebase'den gelen URL geçerli
+              : const AssetImage('assets/images/sondilim.png')
+                  as ImageProvider, // Varsayılan görsel
+          fit: BoxFit.cover,
+        ),
       ),
-    ),
-  );
-}
-
+    );
+  }
 
   Widget _buildInfo() {
     return Padding(
