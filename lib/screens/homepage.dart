@@ -22,14 +22,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<Marker> _markers = {};
   LatLng? _currentPosition;
   bool _isRequestingPermission = false;
+  List<Map<String, dynamic>> nearbyShops = []; // Yakın restoranlar listesi
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _startLocationStream(); // Konum değişimini dinlemek için stream başlatıyoruz
   }
 
-  Future<void> _getCurrentLocation() async {
+// Konum değişimini sürekli dinlemek için stream başlatıyoruz
+  void _startLocationStream() async {
     if (_isRequestingPermission) return;
 
     _isRequestingPermission = true;
@@ -49,14 +51,18 @@ class _HomeScreenState extends State<HomeScreen> {
         throw 'Konum izinleri kalıcı olarak reddedildi.';
       }
 
-      final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-
-      setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
+      // Konum stream'ini başlatıyoruz
+      Geolocator.getPositionStream(
+        locationSettings: LocationSettings(
+          accuracy: LocationAccuracy.high,
+          distanceFilter: 10, // En az 10 metre ilerledikçe tetiklensin
+        ),
+      ).listen((Position position) {
+        setState(() {
+          _currentPosition = LatLng(position.latitude, position.longitude);
+        });
+        _loadMarkersFromFirebase(); // Konum değiştikçe marker'ları güncelliyoruz
       });
-
-      _loadMarkersFromFirebase();
     } catch (e) {
       debugPrint(e.toString());
     } finally {
@@ -71,22 +77,27 @@ class _HomeScreenState extends State<HomeScreen> {
         await FirebaseFirestore.instance.collection('markers').get();
 
     setState(() {
-      _markers.clear();
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final latitude = data['latitude'];
-        final longitude = data['longitude'];
+      _markers.clear(); // Önceden eklenmiş markerları temizle
+      nearbyShops.clear(); // Önceden eklenmiş restoranları temizle
+    });
 
-        if (latitude != null && longitude != null) {
-          final shopPosition = LatLng(latitude, longitude);
-          final distanceInMeters = Geolocator.distanceBetween(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-            shopPosition.latitude,
-            shopPosition.longitude,
-          );
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final latitude = data['latitude'];
+      final longitude = data['longitude'];
 
-          if (distanceInMeters <= 1000) {
+      if (latitude != null && longitude != null) {
+        final shopPosition = LatLng(latitude, longitude);
+        final distanceInMeters = Geolocator.distanceBetween(
+          _currentPosition!.latitude,
+          _currentPosition!.longitude,
+          shopPosition.latitude,
+          shopPosition.longitude,
+        );
+
+        // 1 km içindeki restoranları ekle
+        if (distanceInMeters <= 1000) {
+          setState(() {
             _markers.add(Marker(
               markerId: MarkerId(doc.id),
               position: shopPosition,
@@ -95,10 +106,18 @@ class _HomeScreenState extends State<HomeScreen> {
                 snippet: data['snippet'] ?? 'Adres Bilgisi Yok',
               ),
             ));
-          }
+            nearbyShops.add({
+              'name': data['title'] ?? 'Mağaza Adı Yok',
+              'address': data['snippet'] ?? 'Adres Bilgisi Yok',
+              'image': data['image'] ?? 'assets/images/rest.jpg',
+              'distance': (distanceInMeters / 1000).toStringAsFixed(2), // KM
+              'latitude': latitude,
+              'longitude': longitude,
+            });
+          });
         }
       }
-    });
+    }
   }
 
   @override
@@ -107,7 +126,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 255, 166, 0), Color.fromARGB(255, 255, 255, 255)],
+            colors: [
+              Color.fromARGB(255, 255, 166, 0),
+              Color.fromARGB(255, 255, 255, 255)
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -126,7 +148,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Row(
                         children: [
                           CircleAvatar(
-                            backgroundImage: AssetImage('assets/images/sondilim.png'),
+                            backgroundImage:
+                                AssetImage('assets/images/sondilim.png'),
                             radius: 30,
                           ),
                           const SizedBox(width: 10),
@@ -161,7 +184,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const AddProduct()),
+                            MaterialPageRoute(
+                                builder: (context) => const AddProduct()),
                           );
                         },
                       ),
@@ -171,7 +195,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Slogan Alanı
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 20, horizontal: 16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(15),
@@ -308,59 +333,46 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 10),
                   // Restoranlar Listesi
-                  StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('shops').snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return const Text(
-                          'Restoran bulunamadı.',
-                          style: TextStyle(color: Colors.white),
-                        );
-                      }
-
-                      final shopDocs = snapshot.data!.docs;
-
-                      return SizedBox(
-                        height: 105, // Kartların yüksekliğiyle uyumlu olmalı
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: shopDocs.length,
-                          itemBuilder: (context, index) {
-                            final shopData = shopDocs[index].data() as Map<String, dynamic>;
-                            final shopName = shopData['name'] ?? 'Mağaza Adı Yok';
-                            final shopAddress = shopData['address'] ?? 'Adres Bilgisi Yok';
-                            final shopImagePath = shopData['image']?.isNotEmpty == true
-                                ? shopData['image'] // Firebase'den gelen URL
-                                : 'assets/images/rest.jpg'; // Varsayılan görsel
-
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 10),
-                              child: YatayRestaurantCard(
-                                shopName: shopName,
-                                shopAddress: shopAddress,
-                                shopImagePath: shopImagePath,
-                                onTap: () {
-                                  // Detay sayfasına yönlendirme
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => RestaurantDetails(
-                                        shopName: shopName,
-                                        shopAddress: shopAddress,
+                  nearbyShops.isEmpty
+                      ? const Text(
+                          'Yakınlarda restoran bulunamadı.',
+                          style: TextStyle(color: Colors.black),
+                        )
+                      : SizedBox(
+                          height: 105,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: nearbyShops.length,
+                            itemBuilder: (context, index) {
+                              final shop = nearbyShops[index];
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: YatayRestaurantCard(
+                                  shopName: shop['name'],
+                                  shopAddress: shop['address'],
+                                  shopImagePath: shop['image'],
+                                  userLocation: _currentPosition ??
+                                      LatLng(0, 0), // Kullanıcının anlık konumu
+                                  shopLatitude:
+                                      shop['latitude'] ?? 0.0, // Null kontrolü
+                                  shopLongitude:
+                                      shop['longitude'] ?? 0.0, // Null kontrolü
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => RestaurantDetails(
+                                          shopName: shop['name'],
+                                          shopAddress: shop['address'],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      );
-                    },
-                  ),
                 ],
               ),
             ),

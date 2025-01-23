@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class YatayRestaurantCard extends StatelessWidget {
   final String shopName;
   final String shopAddress;
   final String shopImagePath;
+  final LatLng userLocation; // Kullanıcının anlık konumu
+  final double shopLatitude;
+  final double shopLongitude;
   final VoidCallback onTap;
 
   const YatayRestaurantCard({
@@ -11,12 +16,25 @@ class YatayRestaurantCard extends StatelessWidget {
     required this.shopName,
     required this.shopAddress,
     required this.shopImagePath,
+    required this.userLocation,
+    required this.shopLatitude,
+    required this.shopLongitude,
     required this.onTap,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+
+    // Mesafeyi hesapla
+    final distance = Geolocator.distanceBetween(
+      userLocation.latitude,
+      userLocation.longitude,
+      shopLatitude,
+      shopLongitude,
+    );
+    final distanceInKm =
+        (distance / 1000).toStringAsFixed(2); // Kilometre cinsinden
 
     return GestureDetector(
       onTap: onTap,
@@ -40,7 +58,8 @@ class YatayRestaurantCard extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -74,7 +93,7 @@ class YatayRestaurantCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '500 MT', // Dinamik değer eklenebilir
+                          '$distanceInKm KM', // Dinamik mesafe
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
