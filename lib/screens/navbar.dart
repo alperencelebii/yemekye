@@ -22,6 +22,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'assets/icons/pie.svg',
     'assets/icons/clock.svg',
     'assets/icons/li_user.svg',
+    'assets/icons/li_user.svg',
   ];
 
   final List<String> _labels = [
@@ -29,6 +30,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'Search',
     'Favorites',
     'History',
+    'Profile',
     'Profile',
   ];
 
@@ -38,6 +40,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     AdminPanel(),
     QRCodeScannerScreen(),
     SepetScreen(),
+    Yonetici()
   ];
 
   @override
@@ -47,7 +50,10 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color.fromARGB(255, 255, 255, 255), Color.fromARGB(255, 255, 255, 255)],
+            colors: [
+              Color.fromARGB(255, 255, 255, 255),
+              Color.fromARGB(255, 255, 255, 255)
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -66,7 +72,8 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 10.0),
                   decoration: BoxDecoration(
                     color: isSelected ? Color(0xFFF9A602) : Colors.transparent,
                     borderRadius: BorderRadius.circular(20.0),
@@ -77,7 +84,9 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
                         _icons[index],
                         width: 24,
                         height: 24,
-                        color: isSelected ? Color.fromARGB(255, 255, 255, 255) : const Color.fromARGB(255, 0, 0, 0),
+                        color: isSelected
+                            ? Color.fromARGB(255, 255, 255, 255)
+                            : const Color.fromARGB(255, 0, 0, 0),
                       ),
                       if (isSelected)
                         Padding(
