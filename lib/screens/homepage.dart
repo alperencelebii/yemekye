@@ -22,6 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<Marker> _markers = {};
   LatLng? _currentPosition;
   List<Map<String, dynamic>> nearbyShops = [];
+  bool showRestaurants = false;
 
   @override
   void initState() {
@@ -275,15 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Popüler Restoranlar',
-                style: TextStyle(
-                  fontFamily: 'BeVietnamPro',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 10),
+
               // Harita
               Container(
                 height: 200,
@@ -315,44 +308,75 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
               ),
               const SizedBox(height: 10),
-              // Restoranlar
-              nearbyShops.isEmpty
-                  ? const Text(
-                      'Yakınlarda restoran bulunamadı.',
-                      style: TextStyle(color: Colors.black),
-                    )
-                  : SizedBox(
-                      height: 105,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: nearbyShops.length,
-                        itemBuilder: (context, index) {
-                          final shop = nearbyShops[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 10),
-                            child: YatayRestaurantCard(
-                              shopName: shop['name'],
-                              shopAddress: shop['address'],
-                              shopImagePath: shop['image'],
-                              userLocation: _currentPosition ?? LatLng(0, 0),
-                              shopLatitude: shop['latitude'] ?? 0.0,
-                              shopLongitude: shop['longitude'] ?? 0.0,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => RestaurantDetails(
-                                      shopName: shop['name'],
-                                      shopAddress: shop['address'],
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        },
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Popüler Restoranlar',
+                    style: TextStyle(
+                      fontFamily: 'BeVietnamPro',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // "Göster" butonuna basıldığında restoranları açıp kapatma
+                      setState(() {
+                        showRestaurants = !showRestaurants;
+                      });
+                    },
+                    child: Text(
+                      showRestaurants ? 'Gizle' : 'Göster',
+                      style: const TextStyle(
+                        color: Colors.blue, // Buton metni rengi
+                        fontSize: 14,
                       ),
                     ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+// Restoranlar
+              if (showRestaurants)
+                nearbyShops.isEmpty
+                    ? const Text(
+                        'Yakınlarda restoran bulunamadı.',
+                        style: TextStyle(color: Colors.black),
+                      )
+                    : SizedBox(
+                        height: 105,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: nearbyShops.length,
+                          itemBuilder: (context, index) {
+                            final shop = nearbyShops[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 10),
+                              child: YatayRestaurantCard(
+                                shopName: shop['name'],
+                                shopAddress: shop['address'],
+                                shopImagePath: shop['image'],
+                                userLocation: _currentPosition ?? LatLng(0, 0),
+                                shopLatitude: shop['latitude'] ?? 0.0,
+                                shopLongitude: shop['longitude'] ?? 0.0,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => RestaurantDetails(
+                                        shopName: shop['name'],
+                                        shopAddress: shop['address'],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
             ],
           ),
         ),
