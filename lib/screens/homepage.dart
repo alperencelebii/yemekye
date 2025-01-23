@@ -1,11 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:yemekye/screens/addproduct.dart';
 import 'package:yemekye/screens/restaurant_details.dart';
 import 'package:yemekye/components/models/yatay_restaurant_card.dart';
-import 'package:yemekye/components/models/restaurant_list_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -22,15 +21,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<Marker> _markers = {};
   LatLng? _currentPosition;
   bool _isRequestingPermission = false;
-  List<Map<String, dynamic>> nearbyShops = []; // Yakın restoranlar listesi
+  List<Map<String, dynamic>> nearbyShops = [];
 
   @override
   void initState() {
     super.initState();
-    _startLocationStream(); // Konum değişimini dinlemek için stream başlatıyoruz
+    _startLocationStream();
   }
 
-// Konum değişimini sürekli dinlemek için stream başlatıyoruz
   void _startLocationStream() async {
     if (_isRequestingPermission) return;
 
@@ -51,17 +49,16 @@ class _HomeScreenState extends State<HomeScreen> {
         throw 'Konum izinleri kalıcı olarak reddedildi.';
       }
 
-      // Konum stream'ini başlatıyoruz
       Geolocator.getPositionStream(
         locationSettings: LocationSettings(
           accuracy: LocationAccuracy.high,
-          distanceFilter: 10, // En az 10 metre ilerledikçe tetiklensin
+          distanceFilter: 10,
         ),
       ).listen((Position position) {
         setState(() {
           _currentPosition = LatLng(position.latitude, position.longitude);
         });
-        _loadMarkersFromFirebase(); // Konum değiştikçe marker'ları güncelliyoruz
+        _loadMarkersFromFirebase();
       });
     } catch (e) {
       debugPrint(e.toString());
@@ -77,14 +74,15 @@ class _HomeScreenState extends State<HomeScreen> {
         await FirebaseFirestore.instance.collection('markers').get();
 
     setState(() {
-      _markers.clear(); // Önceden eklenmiş markerları temizle
-      nearbyShops.clear(); // Önceden eklenmiş restoranları temizle
+      _markers.clear();
+      nearbyShops.clear();
     });
 
     for (var doc in snapshot.docs) {
       final data = doc.data();
       final latitude = data['latitude'];
       final longitude = data['longitude'];
+      final shopId = data['shopId']; // shopId alınır
 
       if (latitude != null && longitude != null) {
         final shopPosition = LatLng(latitude, longitude);
@@ -95,22 +93,31 @@ class _HomeScreenState extends State<HomeScreen> {
           shopPosition.longitude,
         );
 
-        // 1 km içindeki restoranları ekle
         if (distanceInMeters <= 1000) {
+          final shopSnapshot = await FirebaseFirestore.instance
+              .collection('shops')
+              .doc(shopId)
+              .get();
+
+          final shopData = shopSnapshot.data();
+          final shopImage = shopData?['image'] ?? 'assets/images/rest.jpg';
+          final shopName = shopData?['name'] ?? 'Mağaza Adı Yok';
+          final shopAddress = shopData?['address'] ?? 'Adres Bilgisi Yok';
+
           setState(() {
             _markers.add(Marker(
               markerId: MarkerId(doc.id),
               position: shopPosition,
               infoWindow: InfoWindow(
-                title: data['title'] ?? 'Mağaza Adı Yok',
-                snippet: data['snippet'] ?? 'Adres Bilgisi Yok',
+                title: shopName,
+                snippet: shopAddress,
               ),
             ));
             nearbyShops.add({
-              'name': data['title'] ?? 'Mağaza Adı Yok',
-              'address': data['snippet'] ?? 'Adres Bilgisi Yok',
-              'image': data['image'] ?? 'assets/images/rest.jpg',
-              'distance': (distanceInMeters / 1000).toStringAsFixed(2), // KM
+              'name': shopName,
+              'address': shopAddress,
+              'image': shopImage,
+              'distance': (distanceInMeters / 1000).toStringAsFixed(2),
               'latitude': latitude,
               'longitude': longitude,
             });
@@ -351,12 +358,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   shopName: shop['name'],
                                   shopAddress: shop['address'],
                                   shopImagePath: shop['image'],
-                                  userLocation: _currentPosition ??
-                                      LatLng(0, 0), // Kullanıcının anlık konumu
-                                  shopLatitude:
-                                      shop['latitude'] ?? 0.0, // Null kontrolü
-                                  shopLongitude:
-                                      shop['longitude'] ?? 0.0, // Null kontrolü
+                                  userLocation:
+                                      _currentPosition ?? LatLng(0, 0),
+                                  shopLatitude: shop['latitude'] ?? 0.0,
+                                  shopLongitude: shop['longitude'] ?? 0.0,
                                   onTap: () {
                                     Navigator.push(
                                       context,
