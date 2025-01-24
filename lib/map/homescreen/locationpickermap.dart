@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
-import 'dart:async';
 
 class LocationPicker extends StatefulWidget {
   const LocationPicker({Key? key}) : super(key: key);
@@ -12,56 +11,51 @@ class LocationPicker extends StatefulWidget {
 
 class _LocationPickerState extends State<LocationPicker> {
   LatLng? _pickedPosition;
+  LatLng? _currentLocation;
+  String? _address;
   late GoogleMapController _mapController;
-  BitmapDescriptor? _customMarker;
-  Location _location = Location();
-
-  Timer? _debounce;
+  BitmapDescriptor? customMarker;
+  final Location _location = Location();
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _loadCustomMarker();
+    _getCurrentLocation();
   }
 
   Future<void> _loadCustomMarker() async {
-    final customMarker = await BitmapDescriptor.fromAssetImage(
+    customMarker = await BitmapDescriptor.fromAssetImage(
       const ImageConfiguration(size: Size(48, 48)),
-      'assets/images/a1.png', // Marker için optimize bir dosya kullanın.
+      'assets/images/marker.png',
     );
-    setState(() {
-      _customMarker = customMarker;
-    });
+    setState(() {});
   }
 
   Future<void> _getCurrentLocation() async {
-    final currentLocation = await _location.getLocation();
-    final currentLatLng =
-        LatLng(currentLocation.latitude!, currentLocation.longitude!);
-
-    _mapController.animateCamera(
-      CameraUpdate.newLatLngZoom(currentLatLng, 15),
-    );
-
-    setState(() {
-      _pickedPosition = currentLatLng;
-    });
-  }
-
-  void _onCameraMove(CameraPosition position) {
-    // Kamera hareketlerini kontrol etmek için debounce ekleniyor.
-    if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 200), () {
+    setState(() => _isLoading = true);
+    try {
+      final locationData = await _location.getLocation();
+      final currentLatLng =
+          LatLng(locationData.latitude!, locationData.longitude!);
       setState(() {
-        _pickedPosition = position.target;
+        _currentLocation = currentLatLng;
+        _pickedPosition ??= currentLatLng;
       });
-    });
+      _mapController
+          .animateCamera(CameraUpdate.newLatLngZoom(currentLatLng, 15));
+      await _updateAddress(currentLatLng);
+    } catch (e) {
+      print("Hata: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
+  Future<void> _updateAddress(LatLng position) async {
+    // Geocoding API implementation can go here.
+    setState(() => _address = "Adres bulunamadı");
   }
 
   @override
@@ -70,61 +64,68 @@ class _LocationPickerState extends State<LocationPicker> {
       height: MediaQuery.of(context).size.height * 0.7,
       child: Column(
         children: [
-          Expanded(
-            child: Stack(
-              children: [
-                GoogleMap(
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                  },
-                  onCameraMove:
-                      _onCameraMove, // Kamera hareketleri debounce ile optimize edildi.
-                  onTap: (position) {
-                    setState(() {
-                      _pickedPosition = position;
-                    });
-                  },
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(39.92077, 32.85411), // Türkiye merkez
-                    zoom: 10,
-                  ),
-                  markers: _pickedPosition == null
-                      ? {}
-                      : {
-                          Marker(
-                            markerId: const MarkerId('pickedPosition'),
-                            position: _pickedPosition!,
-                            icon:
-                                _customMarker ?? BitmapDescriptor.defaultMarker,
-                          ),
-                        },
-                  myLocationEnabled: true,
-                  myLocationButtonEnabled: false,
-                ),
-                Align(
-                  alignment: Alignment.topRight,
-                  child: FloatingActionButton(
-                    onPressed: _getCurrentLocation,
-                    backgroundColor: const Color(0xFFF9A602),
-                    child: const Icon(Icons.my_location),
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: "Adres veya yer ara",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onSubmitted: (value) => print("Arama: $value"),
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (_pickedPosition != null) {
-                Navigator.of(context).pop(_pickedPosition);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF9A602),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          if (_isLoading) const Center(child: CircularProgressIndicator()),
+          Expanded(
+            child: GoogleMap(
+              onMapCreated: (controller) => _mapController = controller,
+              onTap: (position) async {
+                setState(() => _pickedPosition = position);
+                await _updateAddress(position);
+              },
+              initialCameraPosition: CameraPosition(
+                target: _pickedPosition ?? const LatLng(39.92077, 32.85411),
+                zoom: 10,
               ),
+              markers: {
+                if (_pickedPosition != null)
+                  Marker(
+                    markerId: const MarkerId('pickedPosition'),
+                    position: _pickedPosition!,
+                    icon: customMarker ?? BitmapDescriptor.defaultMarker,
+                  ),
+              },
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
             ),
-            child: const Text('Konumu Kaydet'),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _getCurrentLocation,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF9A602),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                ),
+                icon: const Icon(Icons.my_location),
+                label: const Text("Anlık Konumu Al"),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  if (_pickedPosition != null) {
+                    Navigator.of(context).pop(_pickedPosition);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF9A602),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20)),
+                ),
+                child: Text(_address ?? 'Konumu Kaydet'),
+              ),
+            ],
           ),
         ],
       ),

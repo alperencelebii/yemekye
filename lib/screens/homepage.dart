@@ -70,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<String> _getAddressFromLatLng(LatLng position) async {
     final apiKey = Platform.isAndroid
         ? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
-        : 'IOS_API_KEY';
+        : 'AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8';
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey');
 
@@ -78,38 +78,30 @@ class _HomeScreenState extends State<HomeScreen> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['status'] == 'OK' && data['results'].isNotEmpty) {
-        final addressComponents =
-            data['results'][0]['address_components'] as List;
-
-        String? street;
-        String? neighborhood;
-        String? district;
-        String? city;
+        final addressComponents = data['results'][0]['address_components'];
+        String district = '';
+        String neighborhood = '';
+        String street = '';
 
         for (var component in addressComponents) {
-          final types = component['types'] as List;
-          if (types.contains('route')) {
-            street = component['long_name'];
-          } else if (types.contains('sublocality') ||
-              types.contains('neighborhood')) {
-            neighborhood = component['long_name'];
-          } else if (types.contains('administrative_area_level_2')) {
+          if (component['types'].contains('administrative_area_level_2')) {
             district = component['long_name'];
-          } else if (types.contains('administrative_area_level_1')) {
-            city = component['long_name'];
+          }
+          if (component['types'].contains('sublocality') ||
+              component['types'].contains('sublocality_level_1')) {
+            neighborhood = component['long_name'];
+          }
+          if (component['types'].contains('route')) {
+            street = component['long_name'];
           }
         }
 
-        // İstenilen format: İlçe, Mahalle, Sokak
-        final formattedAddress = [
+        // Format the address with available components
+        return [
           district,
           neighborhood,
           street,
-        ].where((element) => element != null).join(', ');
-
-        return formattedAddress.isNotEmpty
-            ? formattedAddress
-            : 'Adres bulunamadı';
+        ].where((e) => e.isNotEmpty).join(', ');
       }
     }
     return 'Adres bulunamadı';
