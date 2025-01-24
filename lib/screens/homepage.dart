@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:yemekye/map/homescreen/locationpickermap.dart';
+import 'package:yemekye/components/models/restaurant_list_card.dart';
+import 'package:yemekye/components/models/yatay_restaurant_card.dart';
+import 'restaurant_details.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -18,8 +22,10 @@ class _HomeScreenState extends State<HomeScreen> {
   String selectedAddress = 'Konum Seçin';
   LatLng? selectedPosition;
 
-  final List<String> categories = ['Pastane', 'Kafe', 'FNK', 'Döner'];
+  final List<String> categories = ['Pastane', 'Kafe', 'Restoran', 'Döner'];
   int selectedCategoryIndex = 0;
+
+  String searchQuery = '';
 
   @override
   void initState() {
@@ -69,7 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<String> _getAddressFromLatLng(LatLng position) async {
     final apiKey = Platform.isAndroid
-        ? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
+? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
         : 'AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8';
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey');
@@ -96,7 +102,6 @@ class _HomeScreenState extends State<HomeScreen> {
           }
         }
 
-        // Format the address with available components
         return [
           district,
           neighborhood,
@@ -111,6 +116,26 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text(
+          'Son Dilim',
+          style: TextStyle(
+            fontFamily: 'BeVietnamPro',
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1D1D1D),
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Color(0xFF1D1D1D)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {},
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -125,18 +150,41 @@ class _HomeScreenState extends State<HomeScreen> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: Text(
-                  selectedAddress,
-                  style: const TextStyle(
-                    fontFamily: 'BeVietnamPro',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.white),
+                    const SizedBox(width: 5),
+                    Text(
+                      selectedAddress,
+                      style: const TextStyle(
+                        fontFamily: 'BeVietnamPro',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 20),
+              TextField(
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value.toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Restoran Ara...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  prefixIcon: const Icon(Icons.search),
+                ),
+              ),
+              const SizedBox(height: 20),
               const Text(
-                'Yakınından ucuza \nYemek bul..',
+                'En İyiler',
                 style: TextStyle(
                   fontFamily: 'BeVietnamPro',
                   fontWeight: FontWeight.bold,
@@ -144,46 +192,93 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Color(0xFF1D1D1D),
                 ),
               ),
-              const SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: List.generate(categories.length, (index) {
-                    final isSelected = selectedCategoryIndex == index;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          selectedCategoryIndex = index;
-                        });
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFFF9A602)
-                              : const Color(0xFFF5F5F5),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          categories[index],
-                          style: TextStyle(
-                            fontFamily: 'BeVietnamPro',
-                            fontWeight: FontWeight.bold,
-                            color: isSelected
-                                ? Colors.white
-                                : const Color(0xFFB9C3C3),
-                          ),
-                        ),
+              const SizedBox(height: 5),
+StreamBuilder<QuerySnapshot>(
+  stream: FirebaseFirestore.instance.collection('shops').snapshots(),
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+      return const Center(child: Text('Hiçbir mağaza bulunamadı.'));
+    }
+
+    final shops = snapshot.data!.docs
+        .where((shop) =>
+            shop['name']?.toString().toLowerCase().contains(searchQuery) ??
+            false)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // RestaurantListCard'ları yatay olarak sıralama
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: shops.map((shop) {
+              final shopData = shop.data() as Map<String, dynamic>;
+              return RestaurantListCard(
+                shopName: shopData['name'] ?? 'Mağaza Adı Yok',
+                shopAddress: shopData['address'] ?? 'Adres Bilgisi Yok',
+                shopImagePath: shopData['image'] ?? 'assets/images/rest.jpg',
+                userLocation: selectedPosition ?? const LatLng(0, 0),
+                shopLatitude: shopData['latitude'] ?? 0.0,
+                shopLongitude: shopData['longitude'] ?? 0.0,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RestaurantDetails(
+                        shopName: shopData['name'],
+                        shopAddress: shopData['address'],
                       ),
-                    );
-                  }),
+                    ),
+                  );
+                },
+              );
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 20),
+const Text(
+                'Tüm Restaurantlar',
+                style: TextStyle(
+                  fontFamily: 'BeVietnamPro',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                  color: Color(0xFF1D1D1D),
                 ),
               ),
-              const SizedBox(height: 20),
+        // YatayRestaurantCard'ları alt alta sıralama
+        Column(
+          children: shops.map((shop) {
+            final shopData = shop.data() as Map<String, dynamic>;
+            return YatayRestaurantCard(
+              shopName: shopData['name'] ?? 'Mağaza Adı Yok',
+              shopAddress: shopData['address'] ?? 'Adres Bilgisi Yok',
+              shopImagePath: shopData['image'] ?? 'assets/images/rest.jpg',
+              userLocation: selectedPosition ?? const LatLng(0, 0),
+              shopLatitude: shopData['latitude'] ?? 0.0,
+              shopLongitude: shopData['longitude'] ?? 0.0,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RestaurantDetails(
+                      shopName: shopData['name'],
+                      shopAddress: shopData['address'],
+                    ),
+                  ),
+                );
+              },
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  },
+),
             ],
           ),
         ),
