@@ -66,7 +66,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<String> _getAddressFromLatLng(LatLng position) async {
-    final apiKey = Platform.isAndroid ? 'ANDROID_API_KEY' : 'IOS_API_KEY';
+    final apiKey = Platform.isAndroid
+        ? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
+        : 'AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8';
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey');
 
