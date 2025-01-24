@@ -3,10 +3,11 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:yemekye/adminpanel/admin.dart';
 import 'package:yemekye/map/map.dart';
 import 'package:yemekye/map/user_map.dart';
-import 'package:yemekye/qrandsepet/qrcodescan.dart';
-import 'package:yemekye/screens/Yoneticipanel.dart';
+import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
+import 'package:yemekye/screens/search.dart';
+import 'package:yemekye/yoneticipanel/Yoneticipanel.dart';
 import 'package:yemekye/screens/homepage.dart';
-import 'package:yemekye/qrandsepet/sepet.dart';
+import 'package:yemekye/qrandsepet/user/sepet.dart';
 
 class ExpandableNavbar extends StatefulWidget {
   @override
@@ -19,6 +20,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
   final List<String> _icons = [
     'assets/icons/home.svg',
     'assets/icons/ssearch.svg',
+    'assets/icons/ssearch.svg',
     'assets/icons/pie.svg',
     'assets/icons/clock.svg',
     'assets/icons/li_user.svg',
@@ -27,6 +29,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
   final List<String> _labels = [
     'Home',
     'Search',
+    'arama',
     'Favorites',
     'History',
     'Profile',
@@ -35,6 +38,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
   final List<Widget> _pages = [
     HomeScreen(),
     AdminPanel(),
+    SearchPage(),
     QRCodeScannerScreen(),
     SepetScreen(),
     Yonetici()

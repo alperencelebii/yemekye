@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:yemekye/screens/addproduct.dart';
+import 'package:yemekye/adminpanel/addproduct.dart';
 import 'package:yemekye/adminpanel/myProducts.dart';
-import 'package:yemekye/qrandsepet/qrcodescan.dart';
+import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
 import 'shopsettings.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -30,11 +30,13 @@ class _AdminPanelState extends State<AdminPanel> {
     try {
       final user = _auth.currentUser; // Oturum açmış kullanıcı
       if (user != null) {
-        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
         final shopId = userDoc.data()?['shopid']; // Kullanıcının mağaza ID'si
 
         if (shopId != null) {
-          final shopDoc = await _firestore.collection('shops').doc(shopId).get();
+          final shopDoc =
+              await _firestore.collection('shops').doc(shopId).get();
           setState(() {
             shopInfo = shopDoc.data(); // Mağaza bilgilerini çek
             isLoading = false;
@@ -70,69 +72,69 @@ class _AdminPanelState extends State<AdminPanel> {
         ),
       ),
       drawer: Drawer(
-  child: ListView(
-    padding: EdgeInsets.zero,
-    children: [
-      DrawerHeader(
-        decoration: BoxDecoration(
-          color: Color(0xFFF9A602),
-        ),
-        child: Center(
-          child: Text(
-            "Yönetim Paneli",
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-      ListTile(
-        leading: Icon(Icons.shopping_basket),
-        title: Text("Ürünler"),
-        onTap: () {
-          Navigator.pop(context);
-          showSubMenu(context, "Ürünler");
-        },
-      ),
-      ListTile(
-        leading: Icon(Icons.settings),
-        title: Text("Ayarlar"),
-        onTap: () {
-          Navigator.pop(context);
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => ShopSettings()));
-        },
-      ),
-      Divider(),
-      isLoading
-          ? Center(child: CircularProgressIndicator())
-          : shopInfo != null
-              ? ListTile(
-                  leading: Icon(Icons.store),
-                  title: Text("Mağaza Bilgileri"),
-                  subtitle: Text(shopInfo?['name'] ?? 'Bilinmiyor'),
-                )
-              : ListTile(
-                  leading: Icon(Icons.error),
-                  title: Text("Mağaza bilgisi bulunamadı"),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Color(0xFFF9A602),
+              ),
+              child: Center(
+                child: Text(
+                  "Yönetim Paneli",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-      Divider(),
-      ListTile(
-        leading: Icon(Icons.qr_code_scanner),
-        title: Text("QR Kod Oku"), // Yeni QR Kod Oku seçeneği
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
-          );
-        },
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.shopping_basket),
+              title: Text("Ürünler"),
+              onTap: () {
+                Navigator.pop(context);
+                showSubMenu(context, "Ürünler");
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.settings),
+              title: Text("Ayarlar"),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (context) => ShopSettings()));
+              },
+            ),
+            Divider(),
+            isLoading
+                ? Center(child: CircularProgressIndicator())
+                : shopInfo != null
+                    ? ListTile(
+                        leading: Icon(Icons.store),
+                        title: Text("Mağaza Bilgileri"),
+                        subtitle: Text(shopInfo?['name'] ?? 'Bilinmiyor'),
+                      )
+                    : ListTile(
+                        leading: Icon(Icons.error),
+                        title: Text("Mağaza bilgisi bulunamadı"),
+                      ),
+            Divider(),
+            ListTile(
+              leading: Icon(Icons.qr_code_scanner),
+              title: Text("QR Kod Oku"), // Yeni QR Kod Oku seçeneği
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => QRCodeScannerScreen()),
+                );
+              },
+            ),
+          ],
+        ),
       ),
-    ],
-  ),
-),
-
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -176,14 +178,19 @@ class _AdminPanelState extends State<AdminPanel> {
                             ],
                             isCurved: true,
                             gradient: LinearGradient(
-                              colors: [const Color.fromARGB(255, 255, 220, 143), const Color.fromARGB(255, 255, 153, 0)],
+                              colors: [
+                                const Color.fromARGB(255, 255, 220, 143),
+                                const Color.fromARGB(255, 255, 153, 0)
+                              ],
                             ),
                             belowBarData: BarAreaData(
                               show: true,
                               gradient: LinearGradient(
                                 colors: [
-                                  const Color.fromARGB(255, 0, 0, 0).withOpacity(0.3),
-                                  const Color.fromARGB(255, 255, 187, 0).withOpacity(0.3),
+                                  const Color.fromARGB(255, 0, 0, 0)
+                                      .withOpacity(0.3),
+                                  const Color.fromARGB(255, 255, 187, 0)
+                                      .withOpacity(0.3),
                                 ],
                               ),
                             ),
@@ -220,7 +227,6 @@ class _AdminPanelState extends State<AdminPanel> {
                     ),
                   ],
                 ),
-                
                 child: Center(
                   child: Icon(
                     Icons.qr_code_2,
@@ -270,95 +276,95 @@ class _AdminPanelState extends State<AdminPanel> {
     );
   }
 
-void showSubMenu(BuildContext context, String menuTitle) {
-  showModalBottomSheet(
-    context: context,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    backgroundColor: Colors.white,
-    builder: (context) {
-      if (menuTitle == "Ürünler") {
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFFFE082),
-                Color(0xFFF9A602),
-              ],
+  void showSubMenu(BuildContext context, String menuTitle) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        if (menuTitle == "Ürünler") {
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFE082),
+                  Color(0xFFF9A602),
+                ],
+              ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                ),
-                SizedBox(height: 16),
-                Text(
-                  "Ürünler Menüsü",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                SizedBox(height: 20),
-                ListTile(
-                  leading: Icon(Icons.add_box, color: Colors.white),
-                  title: Text(
-                    "Ürün Ekle",
+                  SizedBox(height: 16),
+                  Text(
+                    "Ürünler Menüsü",
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AddProduct()),
-                    );
-                  },
-                ),
-                Divider(color: Colors.white.withOpacity(0.5)),
-                ListTile(
-                  leading: Icon(Icons.list, color: Colors.white),
-                  title: Text(
-                    "Ürünlerim",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  SizedBox(height: 20),
+                  ListTile(
+                    leading: Icon(Icons.add_box, color: Colors.white),
+                    title: Text(
+                      "Ürün Ekle",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => AddProduct()),
+                      );
+                    },
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MyProducts()),
-                    );
-                  },
-                ),
-                SizedBox(height: 10),
-              ],
+                  Divider(color: Colors.white.withOpacity(0.5)),
+                  ListTile(
+                    leading: Icon(Icons.list, color: Colors.white),
+                    title: Text(
+                      "Ürünlerim",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => MyProducts()),
+                      );
+                    },
+                  ),
+                  SizedBox(height: 10),
+                ],
+              ),
             ),
-          ),
-        );
-      }
-      return SizedBox.shrink();
-    },
-  );
-}
+          );
+        }
+        return SizedBox.shrink();
+      },
+    );
+  }
 }

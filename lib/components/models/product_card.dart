@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:yemekye/qrandsepet/sepet.dart';
+import 'package:yemekye/qrandsepet/user/sepet.dart';
 
 class ProductCard extends StatelessWidget {
   final String shopId;
