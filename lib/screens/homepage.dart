@@ -1,11 +1,10 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:yemekye/screens/addproduct.dart';
-import 'package:yemekye/screens/restaurant_details.dart';
-import 'package:yemekye/components/models/restaurant_list_card.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -14,162 +13,105 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  String? selectedAddress = 'Konum Seçin';
+  LatLng? selectedPosition;
+
   final List<String> categories = ['Pastane', 'Kafe', 'FNK', 'Döner'];
   int selectedCategoryIndex = 0;
-  String searchQuery = '';
-  late GoogleMapController _mapController;
-  Set<Marker> _markers = {};
-  LatLng? _currentPosition;
+
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _loadInitialLocation();
   }
 
-  bool _isRequestingPermission = false;
-  Future<void> _getCurrentLocation() async {
-    if (_isRequestingPermission) {
-      return; // Zaten bir istek devam ediyorsa yeni istek başlatma.
-    }
-    _isRequestingPermission = true; // İzin isteme işlemi başladı.
-    try {
-      bool serviceEnabled;
-      LocationPermission permission;
-      // Konum servislerini kontrol et
-      serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        throw 'Location services are disabled.';
-      }
-      // Konum izni kontrolü
-      permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          throw 'Location permissions are denied';
-        }
-      }
-      if (permission == LocationPermission.deniedForever) {
-        throw 'Location permissions are permanently denied, we cannot request permissions.';
-      }
-      // Anlık konumu al
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
+  Future<void> _loadInitialLocation() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? savedAddress = prefs.getString('selectedAddress');
+    double? lat = prefs.getDouble('latitude');
+    double? lng = prefs.getDouble('longitude');
+
+    if (savedAddress != null && lat != null && lng != null) {
       setState(() {
-        _currentPosition = LatLng(position.latitude, position.longitude);
+        selectedAddress = savedAddress;
+        selectedPosition = LatLng(lat, lng);
       });
-      // Marker'ları yükle
-      _loadMarkersFromFirebase();
-      // Konum değişikliklerini dinle ve markerları güncelle
-      Geolocator.getPositionStream(
-          locationSettings: LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10,
-      )).listen((Position position) {
-        setState(() {
-          _currentPosition = LatLng(position.latitude, position.longitude);
-        });
-        // Marker'ları yeniden yükle
-        _loadMarkersFromFirebase();
-      });
-    } catch (e) {
-      debugPrint(e.toString());
-    } finally {
-      _isRequestingPermission = false; // İzin işlemi tamamlandı.
+    } else {
+      _promptLocationSelection();
     }
   }
 
-  // Firebase'den markerları alıp haritaya ekler
-// Firebase'den markerları alıp haritaya ekler
-  Future<void> _loadMarkersFromFirebase() async {
-    if (_currentPosition == null) return;
-    // Firebase 'markers' koleksiyonundan verileri al
-    final snapshot =
-        await FirebaseFirestore.instance.collection('markers').get();
+  Future<void> _promptLocationSelection() async {
+    final result = await showModalBottomSheet<LatLng?>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _LocationPicker(),
+    );
+
+    if (result != null) {
+      await _saveSelectedLocation(result);
+    }
+  }
+
+  Future<void> _saveSelectedLocation(LatLng position) async {
+    String address = await _getAddressFromLatLng(position);
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('selectedAddress', address);
+    await prefs.setDouble('latitude', position.latitude);
+    await prefs.setDouble('longitude', position.longitude);
+
     setState(() {
-      _markers.clear(); // Mevcut markerları temizle
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final latitude = data['latitude'];
-        final longitude = data['longitude'];
-        // Null kontrolü yapalım
-        if (latitude != null && longitude != null) {
-          final shopPosition = LatLng(latitude, longitude);
-          // Kullanıcı konumuyla marker arasındaki mesafeyi hesapla
-          double distanceInMeters = Geolocator.distanceBetween(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-            shopPosition.latitude,
-            shopPosition.longitude,
-          );
-          // 1 km (1000 metre) mesafedeki markerları ekle
-          if (distanceInMeters <= 1000) {
-            final marker = Marker(
-              markerId: MarkerId(doc.id),
-              position: shopPosition,
-              infoWindow: InfoWindow(
-                title: data['title'] ??
-                    'Mağaza Adı Yok', // title yerine name kullandık
-                snippet: data['snippet'] ??
-                    'Adres Bilgisi Yok', // snippet yerine address kullandık
-              ),
-            );
-            _markers.add(marker);
-          }
-        }
-      }
+      selectedAddress = address;
+      selectedPosition = position;
     });
+  }
+
+  Future<String> _getAddressFromLatLng(LatLng position) async {
+    final apiKey = Platform.isAndroid
+        ? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
+        : 'AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8';
+    final url = Uri.parse(
+        'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey');
+
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['status'] == 'OK' && data['results'].isNotEmpty) {
+        return data['results'][0]['formatted_address'];
+      }
+    }
+    return 'Adres bulunamadı';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: Row(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Merhaba',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'BeVietnamPro',
-                    color: Color(0xFF1D1D1D),
-                  ),
-                ),
-                Text(
-                  'Alperen',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontFamily: 'BeVietnamPro',
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1D1D1D),
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            IconButton(
-              icon: SvgPicture.asset('assets/icons/Vector.svg'),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => AddProduct()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              ElevatedButton(
+                onPressed: _promptLocationSelection,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF9A602),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: Text(
+                  selectedAddress ?? 'Konum Seçin',
+                  style: const TextStyle(
+                    fontFamily: 'BeVietnamPro',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               const Text(
                 'Yakınından ucuza \nYemek bul..',
                 style: TextStyle(
@@ -177,51 +119,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
                   color: Color(0xFF1D1D1D),
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Arama Çubuğu
-              Container(
-                height: 50,
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(25),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    SvgPicture.asset(
-                      'assets/icons/search.svg',
-                      width: 20,
-                      height: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: 'Ara',
-                          hintStyle: TextStyle(
-                            color: Color(0xFFB9C3C3),
-                          ),
-                        ),
-                        onChanged: (value) {
-                          setState(() {
-                            searchQuery = value;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
                 ),
               ),
               const SizedBox(height: 10),
@@ -265,50 +162,75 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              const Text(
-                'Popüler Restoranlar',
-                style: TextStyle(
-                  fontFamily: 'BeVietnamPro',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
-              const SizedBox(height: 10),
-              // Harita
-              Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      spreadRadius: 2,
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: _currentPosition == null
-                    ? const Center(child: CircularProgressIndicator())
-                    : GoogleMap(
-                        onMapCreated: (controller) {
-                          _mapController = controller;
-                        },
-                        markers:
-                            _markers, // Firebase'ten çekilen markerlar burada görünecek
-                        initialCameraPosition: CameraPosition(
-                          target: _currentPosition!,
-                          zoom: 14.0,
-                        ),
-                        myLocationEnabled: true,
-                        myLocationButtonEnabled: true,
-                      ),
-              ),
-              const SizedBox(height: 10),
-              // Restoranlar
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LocationPicker extends StatefulWidget {
+  @override
+  __LocationPickerState createState() => __LocationPickerState();
+}
+
+class __LocationPickerState extends State<_LocationPicker> {
+  LatLng? _pickedPosition;
+  late GoogleMapController _mapController;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.7,
+      child: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                hintText: "Adres veya yer ara",
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) {
+                // Google Places API çağrısını buraya entegre edebilirsiniz.
+              },
+            ),
+          ),
+          Expanded(
+            child: GoogleMap(
+              onMapCreated: (controller) {
+                _mapController = controller;
+              },
+              onTap: (position) {
+                setState(() {
+                  _pickedPosition = position;
+                });
+              },
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(39.92077, 32.85411), // Türkiye merkez
+                zoom: 10,
+              ),
+              markers: _pickedPosition == null
+                  ? {}
+                  : {
+                      Marker(
+                        markerId: const MarkerId('pickedPosition'),
+                        position: _pickedPosition!,
+                      ),
+                    },
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (_pickedPosition != null) {
+                Navigator.of(context).pop(_pickedPosition);
+              }
+            },
+            child: const Text('Konumu Kaydet'),
+          ),
+        ],
       ),
     );
   }
