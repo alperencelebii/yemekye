@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -8,12 +7,13 @@ import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String? selectedAddress = 'Konum Seçin';
+  String selectedAddress = 'Konum Seçin';
   LatLng? selectedPosition;
 
   final List<String> categories = ['Pastane', 'Kafe', 'FNK', 'Döner'];
@@ -36,8 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedAddress = savedAddress;
         selectedPosition = LatLng(lat, lng);
       });
-    } else {
-      _promptLocationSelection();
     }
   }
 
@@ -45,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final result = await showModalBottomSheet<LatLng?>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _LocationPicker(),
+      builder: (_) => const LocationPicker(),
     );
 
     if (result != null) {
@@ -68,9 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<String> _getAddressFromLatLng(LatLng position) async {
-    final apiKey = Platform.isAndroid
-        ? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
-        : 'AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8';
+    final apiKey = Platform.isAndroid ? 'ANDROID_API_KEY' : 'IOS_API_KEY';
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey');
 
@@ -103,7 +99,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 child: Text(
-                  selectedAddress ?? 'Konum Seçin',
+                  selectedAddress,
                   style: const TextStyle(
                     fontFamily: 'BeVietnamPro',
                     fontWeight: FontWeight.bold,
@@ -122,7 +118,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              // Kategoriler
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
@@ -170,12 +165,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-class _LocationPicker extends StatefulWidget {
+class LocationPicker extends StatefulWidget {
+  const LocationPicker({Key? key}) : super(key: key);
+
   @override
-  __LocationPickerState createState() => __LocationPickerState();
+  _LocationPickerState createState() => _LocationPickerState();
 }
 
-class __LocationPickerState extends State<_LocationPicker> {
+class _LocationPickerState extends State<LocationPicker> {
   LatLng? _pickedPosition;
   late GoogleMapController _mapController;
 
@@ -194,7 +191,7 @@ class __LocationPickerState extends State<_LocationPicker> {
                 border: OutlineInputBorder(),
               ),
               onChanged: (value) {
-                // Google Places API çağrısını buraya entegre edebilirsiniz.
+                // Google Places API entegre edilebilir.
               },
             ),
           ),
@@ -228,6 +225,12 @@ class __LocationPickerState extends State<_LocationPicker> {
                 Navigator.of(context).pop(_pickedPosition);
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFF9A602),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
             child: const Text('Konumu Kaydet'),
           ),
         ],
