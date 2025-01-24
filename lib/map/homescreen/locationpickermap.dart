@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
@@ -10,8 +12,8 @@ class LocationPicker extends StatefulWidget {
 }
 
 class _LocationPickerState extends State<LocationPicker> {
-  LatLng? _pickedPosition;
   LatLng? _currentLocation;
+  LatLng _centerPosition = const LatLng(39.92077, 32.85411);
   String? _address;
   late GoogleMapController _mapController;
   BitmapDescriptor? customMarker;
@@ -41,7 +43,7 @@ class _LocationPickerState extends State<LocationPicker> {
           LatLng(locationData.latitude!, locationData.longitude!);
       setState(() {
         _currentLocation = currentLatLng;
-        _pickedPosition ??= currentLatLng;
+        _centerPosition = currentLatLng;
       });
       _mapController
           .animateCamera(CameraUpdate.newLatLngZoom(currentLatLng, 15));
@@ -60,72 +62,95 @@ class _LocationPickerState extends State<LocationPicker> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: Column(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Konum Seç"),
+        backgroundColor: const Color(0xFFF9A602),
+      ),
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: "Adres veya yer ara",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+          GoogleMap(
+            onMapCreated: (controller) => _mapController = controller,
+            onCameraMove: (cameraPosition) {
+              setState(() {
+                _centerPosition = cameraPosition.target;
+              });
+            },
+            onCameraIdle: () async {
+              await _updateAddress(_centerPosition);
+            },
+            initialCameraPosition: CameraPosition(
+              target: _currentLocation ?? const LatLng(39.92077, 32.85411),
+              zoom: 15,
+            ),
+            myLocationEnabled: true,
+            myLocationButtonEnabled: false,
+            gestureRecognizers: {
+              Factory<OneSequenceGestureRecognizer>(
+                () => ScaleGestureRecognizer(),
               ),
-              onSubmitted: (value) => print("Arama: $value"),
+            },
+          ),
+          Center(
+            child: Icon(
+              Icons.location_on,
+              size: 48,
+              color: Colors.red,
             ),
           ),
-          if (_isLoading) const Center(child: CircularProgressIndicator()),
-          Expanded(
-            child: GoogleMap(
-              onMapCreated: (controller) => _mapController = controller,
-              onTap: (position) async {
-                setState(() => _pickedPosition = position);
-                await _updateAddress(position);
-              },
-              initialCameraPosition: CameraPosition(
-                target: _pickedPosition ?? const LatLng(39.92077, 32.85411),
-                zoom: 10,
-              ),
-              markers: {
-                if (_pickedPosition != null)
-                  Marker(
-                    markerId: const MarkerId('pickedPosition'),
-                    position: _pickedPosition!,
-                    icon: customMarker ?? BitmapDescriptor.defaultMarker,
+          Positioned(
+            top: 20,
+            left: 20,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 5,
                   ),
-              },
-              myLocationEnabled: true,
-              myLocationButtonEnabled: false,
+                ],
+              ),
+              child: Text(
+                _address ?? "Konum alınıyor...",
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _getCurrentLocation,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF9A602),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 20,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _getCurrentLocation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF9A602),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
+                  icon: const Icon(Icons.my_location),
+                  label: const Text("Anlık Konumu Al"),
                 ),
-                icon: const Icon(Icons.my_location),
-                label: const Text("Anlık Konumu Al"),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (_pickedPosition != null) {
-                    Navigator.of(context).pop(_pickedPosition);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF9A602),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(_centerPosition);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF9A602),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20)),
+                  ),
+                  child: const Text("Konumu Seç"),
                 ),
-                child: Text(_address ?? 'Konumu Kaydet'),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
