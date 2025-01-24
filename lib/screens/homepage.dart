@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:yemekye/map/homescreen/locationpickermap.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
 
@@ -68,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<String> _getAddressFromLatLng(LatLng position) async {
     final apiKey = Platform.isAndroid
         ? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
-        : 'AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8';
+        : 'IOS_API_KEY';
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey');
 
@@ -76,7 +78,38 @@ class _HomeScreenState extends State<HomeScreen> {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       if (data['status'] == 'OK' && data['results'].isNotEmpty) {
-        return data['results'][0]['formatted_address'];
+        final addressComponents =
+            data['results'][0]['address_components'] as List;
+
+        String? street;
+        String? neighborhood;
+        String? district;
+        String? city;
+
+        for (var component in addressComponents) {
+          final types = component['types'] as List;
+          if (types.contains('route')) {
+            street = component['long_name'];
+          } else if (types.contains('sublocality') ||
+              types.contains('neighborhood')) {
+            neighborhood = component['long_name'];
+          } else if (types.contains('administrative_area_level_2')) {
+            district = component['long_name'];
+          } else if (types.contains('administrative_area_level_1')) {
+            city = component['long_name'];
+          }
+        }
+
+        // İstenilen format: İlçe, Mahalle, Sokak
+        final formattedAddress = [
+          district,
+          neighborhood,
+          street,
+        ].where((element) => element != null).join(', ');
+
+        return formattedAddress.isNotEmpty
+            ? formattedAddress
+            : 'Adres bulunamadı';
       }
     }
     return 'Adres bulunamadı';
@@ -162,80 +195,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class LocationPicker extends StatefulWidget {
-  const LocationPicker({Key? key}) : super(key: key);
-
-  @override
-  _LocationPickerState createState() => _LocationPickerState();
-}
-
-class _LocationPickerState extends State<LocationPicker> {
-  LatLng? _pickedPosition;
-  late GoogleMapController _mapController;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.of(context).size.height * 0.7,
-      child: Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.all(8.0),
-            child: TextField(
-              decoration: const InputDecoration(
-                hintText: "Adres veya yer ara",
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                // Google Places API entegre edilebilir.
-              },
-            ),
-          ),
-          Expanded(
-            child: GoogleMap(
-              onMapCreated: (controller) {
-                _mapController = controller;
-              },
-              onTap: (position) {
-                setState(() {
-                  _pickedPosition = position;
-                });
-              },
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(39.92077, 32.85411), // Türkiye merkez
-                zoom: 10,
-              ),
-              markers: _pickedPosition == null
-                  ? {}
-                  : {
-                      Marker(
-                        markerId: const MarkerId('pickedPosition'),
-                        position: _pickedPosition!,
-                      ),
-                    },
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_pickedPosition != null) {
-                Navigator.of(context).pop(_pickedPosition);
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFF9A602),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text('Konumu Kaydet'),
-          ),
-        ],
       ),
     );
   }
