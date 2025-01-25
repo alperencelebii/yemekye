@@ -10,6 +10,7 @@ class RestaurantListCard extends StatelessWidget {
   final double shopLatitude;
   final double shopLongitude;
   final VoidCallback onTap;
+  final bool isOpen; // Yeni eklenen parametre
 
   const RestaurantListCard({
     Key? key,
@@ -20,6 +21,7 @@ class RestaurantListCard extends StatelessWidget {
     required this.shopLatitude,
     required this.shopLongitude,
     required this.onTap,
+    required this.isOpen, // Yeni parametre
   }) : super(key: key);
 
   @override
@@ -27,8 +29,8 @@ class RestaurantListCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 160, // Sabit genişlik
-        height: 240, // Sabit yükseklik
+        width: 160,
+        height: 240,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -58,7 +60,7 @@ class RestaurantListCard extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF242424),
                       ),
-                      maxLines: 1, // Metni bir satırda sınırla
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
@@ -68,10 +70,10 @@ class RestaurantListCard extends StatelessWidget {
                         fontSize: 12,
                         color: Color(0xFF646464),
                       ),
-                      maxLines: 2, // Metni iki satırda sınırla
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const Spacer(), // KM bilgisini en alta iter
+                    const Spacer(),
                     Row(
                       children: [
                         Icon(
@@ -90,6 +92,25 @@ class RestaurantListCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          isOpen ? Icons.check_circle : Icons.cancel,
+                          size: 14,
+                          color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isOpen ? 'Açık' : 'Kapalı',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -102,7 +123,7 @@ class RestaurantListCard extends StatelessWidget {
 
   Widget _buildImage() {
     return Container(
-      height: 120, // Sabit yükseklik
+      height: 120,
       decoration: BoxDecoration(
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(15),
