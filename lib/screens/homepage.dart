@@ -259,23 +259,18 @@ class _HomeScreenState extends State<HomeScreen> {
                                 height: 240, // Kartların sabit yüksekliği
                                 child: NearbyShopsWidget(
                                   onShopTap: (shopData) {
-                                    final shopName = shopData['name'] ??
-                                        'Bilinmeyen Mağaza'; // Varsayılan değer
-                                    final shopAddress = shopData['address'] ??
-                                        'Adres bilgisi yok'; // Varsayılan değer
-
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) => RestaurantDetails(
-                                          shopName: shopData[
-                                              'title'], // 'name' yerine 'title' kontrol edin
-                                          shopAddress: shopData[
-                                              'snippet'], // Adresin doğru geldiğinden emin olun
+                                          shopName: shopData['title'],
+                                          shopAddress: shopData['snippet'],
                                         ),
                                       ),
                                     );
                                   },
+                                  selectedPosition: selectedPosition ??
+                                      LatLng(0, 0), // Seçilen konumu gönder
                                 ),
                               ),
                             ),

@@ -5,10 +5,12 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class NearbyShopsWidget extends StatefulWidget {
   final Function(Map<String, dynamic> shopData) onShopTap;
+  final LatLng selectedPosition; // Kullanıcının seçtiği konum
 
   const NearbyShopsWidget({
     Key? key,
     required this.onShopTap,
+    required this.selectedPosition, // Yeni eklenen parametre
   }) : super(key: key);
 
   @override
@@ -16,36 +18,16 @@ class NearbyShopsWidget extends StatefulWidget {
 }
 
 class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
-  Position? _userLocation;
   List<Map<String, dynamic>> _nearbyShops = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchUserLocation();
+    _fetchNearbyShops(widget.selectedPosition);
   }
 
-  Future<void> _fetchUserLocation() async {
-    try {
-      Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-
-      setState(() {
-        _userLocation = position;
-      });
-
-      await _fetchNearbyShops(position);
-    } catch (e) {
-      print("Konum alınamadı: $e");
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _fetchNearbyShops(Position userPosition) async {
+  Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
     try {
       final markerSnapshot =
           await FirebaseFirestore.instance.collection('markers').get();
@@ -61,8 +43,13 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
           return false;
         }
 
-        final distance = Geolocator.distanceBetween(userPosition.latitude,
-            userPosition.longitude, markerLat, markerLng);
+        // Kullanıcının seçtiği konum ile mağazalar arasındaki mesafeyi hesapla
+        final distance = Geolocator.distanceBetween(
+          selectedPosition.latitude,
+          selectedPosition.longitude,
+          markerLat,
+          markerLng,
+        );
 
         return distance <= 1000; // 1 km yarıçap
       }).map((marker) {
@@ -78,9 +65,13 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
 
       setState(() {
         _nearbyShops = filteredMarkers;
+        _isLoading = false;
       });
     } catch (e) {
       print("Hata: $e");
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -88,10 +79,6 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_userLocation == null) {
-      return const Center(child: Text("Konum alınamadı."));
     }
 
     if (_nearbyShops.isEmpty) {
@@ -106,10 +93,7 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
             shopName: shopData['title'],
             shopAddress: shopData['snippet'],
             shopImagePath: '', // Varsayılan görsel
-            userLocation: LatLng(
-              _userLocation!.latitude,
-              _userLocation!.longitude,
-            ),
+            userLocation: widget.selectedPosition,
             shopLatitude: shopData['latitude'],
             shopLongitude: shopData['longitude'],
             onTap: () {
