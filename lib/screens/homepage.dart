@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'package:yemekye/components/models/yak%C4%B1nlar/yak%C4%B1n_restaurant_list_card.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -75,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<String> _getAddressFromLatLng(LatLng position) async {
     final apiKey = Platform.isAndroid
-? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
+        ? 'AIzaSyC9zFUi5DMC6Wi4X-kUDP6nQcep_8rgCjY'
         : 'AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8';
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.latitude},${position.longitude}&key=$apiKey');
@@ -193,92 +194,136 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 5),
-StreamBuilder<QuerySnapshot>(
-  stream: FirebaseFirestore.instance.collection('shops').snapshots(),
-  builder: (context, snapshot) {
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-      return const Center(child: Text('Hiçbir mağaza bulunamadı.'));
-    }
+              StreamBuilder<QuerySnapshot>(
+                stream:
+                    FirebaseFirestore.instance.collection('shops').snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
+                        child: Text('Hiçbir mağaza bulunamadı.'));
+                  }
 
-    final shops = snapshot.data!.docs
-        .where((shop) =>
-            shop['name']?.toString().toLowerCase().contains(searchQuery) ??
-            false)
-        .toList();
+                  final shops = snapshot.data!.docs
+                      .where((shop) =>
+                          shop['name']
+                              ?.toString()
+                              .toLowerCase()
+                              .contains(searchQuery) ??
+                          false)
+                      .toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // RestaurantListCard'ları yatay olarak sıralama
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: shops.map((shop) {
-              final shopData = shop.data() as Map<String, dynamic>;
-              return RestaurantListCard(
-                shopName: shopData['name'] ?? 'Mağaza Adı Yok',
-                shopAddress: shopData['address'] ?? 'Adres Bilgisi Yok',
-                shopImagePath: shopData['image'] ?? 'assets/images/rest.jpg',
-                userLocation: selectedPosition ?? const LatLng(0, 0),
-                shopLatitude: shopData['latitude'] ?? 0.0,
-                shopLongitude: shopData['longitude'] ?? 0.0,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => RestaurantDetails(
-                        shopName: shopData['name'],
-                        shopAddress: shopData['address'],
-                      ),
-                    ),
-                  );
+                  return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // RestaurantListCard'ları yatay olarak sıralama
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: shops.map((shop) {
+                              final shopData =
+                                  shop.data() as Map<String, dynamic>;
+                              return RestaurantListCard(
+                                shopName: shopData['name'] ?? 'Mağaza Adı Yok',
+                                shopAddress:
+                                    shopData['address'] ?? 'Adres Bilgisi Yok',
+                                shopImagePath: shopData['image'] ??
+                                    'assets/images/rest.jpg',
+                                userLocation:
+                                    selectedPosition ?? const LatLng(0, 0),
+                                shopLatitude: shopData['latitude'] ?? 0.0,
+                                shopLongitude: shopData['longitude'] ?? 0.0,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => RestaurantDetails(
+                                        shopName: shopData['name'],
+                                        shopAddress: shopData['address'],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 240, // Kartların sabit yüksekliği
+                                child: NearbyShopsWidget(
+                                  onShopTap: (shopData) {
+                                    final shopName = shopData['name'] ??
+                                        'Bilinmeyen Mağaza'; // Varsayılan değer
+                                    final shopAddress = shopData['address'] ??
+                                        'Adres bilgisi yok'; // Varsayılan değer
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => RestaurantDetails(
+                                          shopName: shopData[
+                                              'title'], // 'name' yerine 'title' kontrol edin
+                                          shopAddress: shopData[
+                                              'snippet'], // Adresin doğru geldiğinden emin olun
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Tüm Restaurantlar',
+                          style: TextStyle(
+                            fontFamily: 'BeVietnamPro',
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                            color: Color(0xFF1D1D1D),
+                          ),
+                        ),
+                        // YatayRestaurantCard'ları alt alta sıralama
+                        Column(
+                          children: shops.map((shop) {
+                            final shopData =
+                                shop.data() as Map<String, dynamic>;
+                            return YatayRestaurantCard(
+                              shopName: shopData['name'] ?? 'Mağaza Adı Yok',
+                              shopAddress:
+                                  shopData['address'] ?? 'Adres Bilgisi Yok',
+                              shopImagePath:
+                                  shopData['image'] ?? 'assets/images/rest.jpg',
+                              userLocation:
+                                  selectedPosition ?? const LatLng(0, 0),
+                              shopLatitude: shopData['latitude'] ?? 0.0,
+                              shopLongitude: shopData['longitude'] ?? 0.0,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => RestaurantDetails(
+                                      shopName: shopData['name'],
+                                      shopAddress: shopData['address'],
+                                    ),
+                                  ),
+                                );
+                              },
+                            );
+                          }).toList(),
+                        ),
+                      ]);
                 },
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 20),
-const Text(
-                'Tüm Restaurantlar',
-                style: TextStyle(
-                  fontFamily: 'BeVietnamPro',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Color(0xFF1D1D1D),
-                ),
               ),
-        // YatayRestaurantCard'ları alt alta sıralama
-        Column(
-          children: shops.map((shop) {
-            final shopData = shop.data() as Map<String, dynamic>;
-            return YatayRestaurantCard(
-              shopName: shopData['name'] ?? 'Mağaza Adı Yok',
-              shopAddress: shopData['address'] ?? 'Adres Bilgisi Yok',
-              shopImagePath: shopData['image'] ?? 'assets/images/rest.jpg',
-              userLocation: selectedPosition ?? const LatLng(0, 0),
-              shopLatitude: shopData['latitude'] ?? 0.0,
-              shopLongitude: shopData['longitude'] ?? 0.0,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RestaurantDetails(
-                      shopName: shopData['name'],
-                      shopAddress: shopData['address'],
-                    ),
-                  ),
-                );
-              },
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  },
-),
             ],
           ),
         ),
