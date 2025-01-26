@@ -3,10 +3,10 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
-import 'package:yemekye/components/models/yak%C4%B1nlar/yak%C4%B1n_restaurant_list_card.dart';
+import 'package:yemekye/components/models/popular_restaurant_list_card.dart';
+import 'package:yemekye/components/models/yak%C4%B1nlar/yakin_restaurant_list_card.dart';
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:yemekye/map/homescreen/locationpickermap.dart';
 import 'package:yemekye/components/models/restaurant_list_card.dart';
 import 'package:yemekye/components/models/yatay_restaurant_card.dart';
@@ -219,46 +219,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // RestaurantListCard'ları yatay olarak sıralama
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: shops.map((shop) {
-                              final shopData =
-                                  shop.data() as Map<String, dynamic>;
-                              return RestaurantListCard(
-                                shopName: shopData['name'] ?? 'Mağaza Adı Yok',
-                                shopAddress:
-                                    shopData['address'] ?? 'Adres Bilgisi Yok',
-                                shopImagePath: shopData['image'] ??
-                                    'assets/images/rest.jpg',
-                                userLocation:
-                                    selectedPosition ?? const LatLng(0, 0),
-                                shopLatitude: shopData['latitude'] ?? 0.0,
-                                shopLongitude: shopData['longitude'] ?? 0.0,
-                                isOpen: shopData['isOpen'] ??
-                                    false, // Firestore'dan isOpen bilgisi
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => RestaurantDetails(
-                                        shopName: shopData['name'],
-                                        shopAddress: shopData['address'],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            }).toList(),
-                          ),
-                        ),
                         const SizedBox(height: 20),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: SizedBox(
-                                height: 240, // Kartların sabit yüksekliği
                                 child: NearbyShopsWidget(
                                   onShopTap: (shopData) {
                                     Navigator.push(
@@ -278,7 +244,31 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ],
                         ),
-
+                        const SizedBox(height: 20),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                child: NearbyShops(
+                                  onShopTap: (shopData) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => RestaurantDetails(
+                                          shopName: shopData['title'],
+                                          shopAddress: shopData['snippet'],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  selectedPosition: selectedPosition ??
+                                      LatLng(0, 0), // Seçilen konumu gönder
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 20),
                         const Text(
                           'Tüm Restaurantlar',

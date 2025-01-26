@@ -3,6 +3,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+// 1KM YAKIN ÇAPANLIK UZAKLIĞA GÖRE GÖSTERİYOR
+
 class NearbyShopsWidget extends StatefulWidget {
   final Function(Map<String, dynamic> shopData) onShopTap;
   final LatLng selectedPosition; // Kullanıcının seçtiği konum
@@ -32,18 +34,21 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
       final markerSnapshot =
           await FirebaseFirestore.instance.collection('markers').get();
 
-      final filteredMarkers = markerSnapshot.docs.where((marker) {
+      final List<Map<String, dynamic>> filteredMarkers = [];
+
+      for (var marker in markerSnapshot.docs) {
         final markerData = marker.data() as Map<String, dynamic>;
 
         final double? markerLat = markerData['latitude']?.toDouble();
         final double? markerLng = markerData['longitude']?.toDouble();
+        final String? shopId = markerData['shopId'];
 
-        if (markerLat == null || markerLng == null) {
-          print("Eksik konum verisi: ${marker.id}");
-          return false;
+        if (markerLat == null || markerLng == null || shopId == null) {
+          print("Eksik konum veya shopId verisi: ${marker.id}");
+          continue; // Eksik veya hatalı veri varsa atlıyoruz
         }
 
-        // Kullanıcının seçtiği konum ile mağazalar arasındaki mesafeyi hesapla
+        // Kullanıcı ile mağaza arasındaki mesafeyi hesapla
         final distance = Geolocator.distanceBetween(
           selectedPosition.latitude,
           selectedPosition.longitude,
@@ -51,17 +56,31 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
           markerLng,
         );
 
-        return distance <= 1000; // 1 km yarıçap
-      }).map((marker) {
-        final markerData = marker.data() as Map<String, dynamic>;
-        return {
-          'latitude': markerData['latitude'],
-          'longitude': markerData['longitude'],
-          'shopId': markerData['shopId'],
+        // 1 km yarıçap içinde değilse bu mağazayı dahil etme
+        if (distance > 1000) {
+          continue;
+        }
+
+        // Shops koleksiyonundan image bilgisini çekiyoruz
+        final shopDoc = await FirebaseFirestore.instance
+            .collection('shops')
+            .doc(shopId)
+            .get();
+
+        final shopData = shopDoc.data() as Map<String, dynamic>?;
+
+        filteredMarkers.add({
+          'latitude': markerLat,
+          'longitude': markerLng,
+          'shopId': shopId,
           'title': markerData['title'] ?? 'Bilinmeyen Mağaza',
           'snippet': markerData['snippet'] ?? '',
-        };
-      }).toList();
+          'image':
+              shopData?['image'] ?? 'assets/images/rest.jpg', // Image bilgisi
+          'isOpen':
+              shopData?['isOpen'] ?? false, // Açık/Kapalı durumu (opsiyonel)
+        });
+      }
 
       setState(() {
         _nearbyShops = filteredMarkers;
@@ -96,6 +115,7 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
             userLocation: widget.selectedPosition,
             shopLatitude: shopData['latitude'],
             shopLongitude: shopData['longitude'],
+            isOpen: shopData['isOpen'] ?? false,
             onTap: () {
               widget.onShopTap(shopData); // Detay sayfasına yönlendirme
             },
@@ -113,6 +133,7 @@ class nearlistcard extends StatelessWidget {
   final LatLng userLocation;
   final double shopLatitude;
   final double shopLongitude;
+  final bool isOpen; // Yeni eklenen parametre
   final VoidCallback onTap;
 
   const nearlistcard({
@@ -124,6 +145,7 @@ class nearlistcard extends StatelessWidget {
     required this.shopLatitude,
     required this.shopLongitude,
     required this.onTap,
+    required this.isOpen, // Yeni eklenen parametre
   }) : super(key: key);
 
   @override
@@ -190,6 +212,29 @@ class nearlistcard extends StatelessWidget {
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Colors.orange,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          isOpen ? Icons.check_circle : Icons.cancel,
+                          size: 14,
+                          color: isOpen
+                              ? const Color(0xFF52BF71)
+                              : const Color(0xFFFF6767),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isOpen ? 'Açık' : 'Kapalı',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isOpen
+                                ? const Color(0xFF52BF71)
+                                : const Color(0xFFFF6767),
                           ),
                         ),
                       ],

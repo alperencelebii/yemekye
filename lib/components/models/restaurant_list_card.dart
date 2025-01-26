@@ -1,8 +1,119 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class RestaurantListCard extends StatelessWidget {
+// HEPSİ YARIÇAPTAKİLERİ GÖSTERİYOR
+
+class NearbyShops extends StatefulWidget {
+  final Function(Map<String, dynamic> shopData) onShopTap;
+  final LatLng selectedPosition; // Kullanıcının seçtiği konum
+
+  const NearbyShops({
+    Key? key,
+    required this.onShopTap,
+    required this.selectedPosition,
+  }) : super(key: key);
+
+  @override
+  _NearbyShopsState createState() => _NearbyShopsState();
+}
+
+class _NearbyShopsState extends State<NearbyShops> {
+  List<Map<String, dynamic>> _nearbyShops = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchNearbyShops(widget.selectedPosition);
+  }
+
+  Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
+    try {
+      final markerSnapshot =
+          await FirebaseFirestore.instance.collection('markers').get();
+
+      // Markerları çekiyoruz
+      final List<Map<String, dynamic>> filteredMarkers = [];
+      for (var marker in markerSnapshot.docs) {
+        final markerData = marker.data() as Map<String, dynamic>;
+
+        final double? markerLat = markerData['latitude']?.toDouble();
+        final double? markerLng = markerData['longitude']?.toDouble();
+        final String? shopId = markerData['shopId'];
+
+        if (markerLat == null || markerLng == null || shopId == null) {
+          print("Eksik konum veya shopId verisi: ${marker.id}");
+          continue; // Hatalı veri varsa atlıyoruz
+        }
+
+        // Shops koleksiyonundan image bilgisini çekiyoruz
+        final shopDoc = await FirebaseFirestore.instance
+            .collection('shops')
+            .doc(shopId)
+            .get();
+
+        final shopData = shopDoc.data() as Map<String, dynamic>?;
+
+        filteredMarkers.add({
+          'latitude': markerLat,
+          'longitude': markerLng,
+          'shopId': shopId,
+          'title': markerData['title'] ?? 'Bilinmeyen Mağaza',
+          'snippet': markerData['snippet'] ?? '',
+          'image':
+              shopData?['image'] ?? 'assets/images/rest.jpg', // Image bilgisi
+          'isOpen':
+              shopData?['isOpen'] ?? false, // Açık/Kapalı durumu (opsiyonel)
+        });
+      }
+
+      setState(() {
+        _nearbyShops = filteredMarkers;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Hata: $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_nearbyShops.isEmpty) {
+      return const Center(child: Text("1 KM içinde mağaza bulunamadı."));
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal, // Yatay kaydırılabilir yapı
+      child: Row(
+        children: _nearbyShops.map((shopData) {
+          return nearlistcards(
+            shopName: shopData['title'],
+            shopAddress: shopData['snippet'],
+            shopImagePath: shopData['image'] ?? 'assets/images/rest.jpg',
+            userLocation: widget.selectedPosition,
+            shopLatitude: shopData['latitude'],
+            shopLongitude: shopData['longitude'],
+            isOpen: shopData['isOpen'] ?? false,
+            onTap: () {
+              widget.onShopTap(shopData); // Detay sayfasına yönlendirme
+            },
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class nearlistcards extends StatelessWidget {
   final String shopName;
   final String shopAddress;
   final String shopImagePath;
@@ -12,7 +123,7 @@ class RestaurantListCard extends StatelessWidget {
   final VoidCallback onTap;
   final bool isOpen; // Yeni eklenen parametre
 
-  const RestaurantListCard({
+  const nearlistcards({
     Key? key,
     required this.shopName,
     required this.shopAddress,
@@ -98,7 +209,9 @@ class RestaurantListCard extends StatelessWidget {
                         Icon(
                           isOpen ? Icons.check_circle : Icons.cancel,
                           size: 14,
-                          color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
+                          color: isOpen
+                              ? const Color(0xFF52BF71)
+                              : const Color(0xFFFF6767),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -106,7 +219,9 @@ class RestaurantListCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
+                            color: isOpen
+                                ? const Color(0xFF52BF71)
+                                : const Color(0xFFFF6767),
                           ),
                         ),
                       ],

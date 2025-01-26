@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:yemekye/loginregister/shop_register.dart';
 import 'package:yemekye/yoneticipanel/AddUsers.dart';
 import 'package:yemekye/yoneticipanel/reports/reportlistpage.dart';
 
@@ -21,6 +22,15 @@ class _YoneticiState extends State<Yonetici> {
         title: Text("Yönetici Paneli"),
         backgroundColor: Colors.orange,
         actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CreateShopPage()),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.report),
             onPressed: () {
