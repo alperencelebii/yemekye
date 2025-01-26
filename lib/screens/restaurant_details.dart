@@ -5,11 +5,13 @@ import 'package:yemekye/components/models/product_card.dart';
 class RestaurantDetails extends StatelessWidget {
   final String shopName;
   final String shopAddress;
+  final bool isOpen;
 
   const RestaurantDetails({
     Key? key,
     required this.shopName,
     required this.shopAddress,
+    required this.isOpen,
   }) : super(key: key);
 
   @override
@@ -180,8 +182,10 @@ class RestaurantDetails extends StatelessWidget {
                   return ProductCard(
                     productId: product.id,
                     productName: product['name'] ?? 'Ürün Adı Yok',
+                    isOpen: isOpen,
                     productPrice: (product['price'] as num?)?.toDouble() ?? 0.0,
                     piece: product['piece'] ?? 0,
+
                     shopId: shopDoc.id, // Firestore belge kimliği
                   );
                 }).toList(),
