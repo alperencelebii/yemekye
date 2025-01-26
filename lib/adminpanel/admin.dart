@@ -36,11 +36,13 @@ class _AdminPanelState extends State<AdminPanel> {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
         final shopId = userDoc.data()?['shopid'];
 
         if (shopId != null) {
-          final shopDoc = await _firestore.collection('shops').doc(shopId).get();
+          final shopDoc =
+              await _firestore.collection('shops').doc(shopId).get();
           setState(() {
             shopInfo = shopDoc.data();
             isOpen = shopDoc.data()?['isOpen'] ?? false;
@@ -61,65 +63,69 @@ class _AdminPanelState extends State<AdminPanel> {
     }
   }
 
-Future<void> fetchOrdersData() async {
-  try {
-    final user = _auth.currentUser;
-    if (user != null) {
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      final shopId = userDoc.data()?['shopid'];
+  Future<void> fetchOrdersData() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
+        final shopId = userDoc.data()?['shopid'];
 
-      if (shopId != null) {
-        final ordersSnapshot = await _firestore
-            .collection('carts')
-            .where('shopId', isEqualTo: shopId)
-            .where('status', isEqualTo: 'Onaylandı')
-            .get();
+        if (shopId != null) {
+          final ordersSnapshot = await _firestore
+              .collection('carts')
+              .where('shopId', isEqualTo: shopId)
+              .where('status', isEqualTo: 'Onaylandı')
+              .get();
 
-        // Tarih gruplaması
-        Map<String, int> orderCounts = {};
-        final now = DateTime.now();
+          // Tarih gruplaması
+          Map<String, int> orderCounts = {};
+          final now = DateTime.now();
 
-        for (var doc in ordersSnapshot.docs) {
-          final updatedAt = (doc.data()['updatedAt'] as Timestamp).toDate();
-          final formattedDate = "${updatedAt.year}-${updatedAt.month.toString().padLeft(2, '0')}-${updatedAt.day.toString().padLeft(2, '0')}";
-          orderCounts[formattedDate] = (orderCounts[formattedDate] ?? 0) + 1;
-        }
-
-        // Son 7 günü oluştur
-        List<DateTime> last7Days = List.generate(7, (index) => now.subtract(Duration(days: 6 - index)));
-        List<FlSpot> spots = [];
-        int todayCount = 0;
-
-        for (int i = 0; i < last7Days.length; i++) {
-          final date = last7Days[i];
-          final formattedDate = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-          final count = orderCounts[formattedDate] ?? 0;
-
-          if (i == 6) {
-            todayCount = count; // Bugünkü sipariş sayısı
+          for (var doc in ordersSnapshot.docs) {
+            final updatedAt = (doc.data()['updatedAt'] as Timestamp).toDate();
+            final formattedDate =
+                "${updatedAt.year}-${updatedAt.month.toString().padLeft(2, '0')}-${updatedAt.day.toString().padLeft(2, '0')}";
+            orderCounts[formattedDate] = (orderCounts[formattedDate] ?? 0) + 1;
           }
 
-          spots.add(FlSpot(i.toDouble(), count.toDouble()));
+          // Son 7 günü oluştur
+          List<DateTime> last7Days = List.generate(
+              7, (index) => now.subtract(Duration(days: 6 - index)));
+          List<FlSpot> spots = [];
+          int todayCount = 0;
+
+          for (int i = 0; i < last7Days.length; i++) {
+            final date = last7Days[i];
+            final formattedDate =
+                "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+            final count = orderCounts[formattedDate] ?? 0;
+
+            if (i == 6) {
+              todayCount = count; // Bugünkü sipariş sayısı
+            }
+
+            spots.add(FlSpot(i.toDouble(), count.toDouble()));
+          }
+
+          setState(() {
+            dailyOrdersData = spots;
+            todayOrders = todayCount;
+            totalOrders = ordersSnapshot.docs.length;
+          });
         }
-
-        setState(() {
-          dailyOrdersData = spots;
-          todayOrders = todayCount;
-          totalOrders = ordersSnapshot.docs.length;
-        });
       }
+    } catch (e) {
+      print("Sipariş verileri alınırken hata oluştu: $e");
     }
-  } catch (e) {
-    print("Sipariş verileri alınırken hata oluştu: $e");
   }
-}
-
 
   Future<void> toggleShopStatus() async {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        final userDoc =
+            await _firestore.collection('users').doc(user.uid).get();
         final shopId = userDoc.data()?['shopid'];
 
         if (shopId != null) {
@@ -157,29 +163,31 @@ Future<void> fetchOrdersData() async {
           },
         ),
       ),
-    drawer: buildDrawer(),
-    body: SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            buildGraphCard(), // Grafiği daha yukarı aldık
-            SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                buildInfoCard("Bugünkü Sipariş", todayOrders.toString(), Colors.orange),
-                buildInfoCard("Toplam Sipariş", totalOrders.toString(), Colors.green),
-              ],
-            ),
-            SizedBox(height: 20),
-            buildActionButton(),
-          ],
+      drawer: buildDrawer(),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              buildGraphCard(), // Grafiği daha yukarı aldık
+              SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  buildInfoCard(
+                      "Bugünkü Sipariş", todayOrders.toString(), Colors.orange),
+                  buildInfoCard(
+                      "Toplam Sipariş", totalOrders.toString(), Colors.green),
+                ],
+              ),
+              SizedBox(height: 20),
+              buildActionButton(),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Drawer buildDrawer() {
     return Drawer(
@@ -223,7 +231,14 @@ Future<void> fetchOrdersData() async {
               MaterialPageRoute(builder: (context) => ShopSettings()),
             ),
           ),
-          
+          ListTile(
+            leading: Icon(Icons.settings),
+            title: Text("Ayarlar"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
+            ),
+          ),
           Divider(),
           isLoading
               ? Center(child: CircularProgressIndicator())
@@ -237,7 +252,7 @@ Future<void> fetchOrdersData() async {
                       leading: Icon(Icons.error),
                       title: Text("Mağaza bilgisi bulunamadı"),
                     ),
- ListTile(
+          ListTile(
             leading: Icon(Icons.qr_code_2),
             title: Text("Qr Kod Oku"),
             onTap: () => Navigator.push(
@@ -250,105 +265,109 @@ Future<void> fetchOrdersData() async {
     );
   }
 
-Widget buildGraphCard() {
-  return Container(
-    padding: EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.grey.withOpacity(0.3),
-          spreadRadius: 3,
-          blurRadius: 5,
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          "Günlük Sipariş Grafiği",
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(height: 10),
-        SizedBox(
-          height: 300,
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(show: true),
-              titlesData: FlTitlesData(
-                bottomTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 32,
-                    interval: 1, // Günlük sıçramalar
-                    getTitlesWidget: (value, meta) {
-                      if (value.toInt() >= 0 && value.toInt() < dailyOrdersData.length) {
-                        DateTime date = DateTime.now().subtract(
-                          Duration(days: 6 - value.toInt()),
-                        );
-                        return Text(
-                          "${date.day}/${date.month}",
-                          style: TextStyle(fontSize: 10),
-                        );
-                      }
-                      return Text('');
-                    },
+  Widget buildGraphCard() {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            spreadRadius: 3,
+            blurRadius: 5,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Günlük Sipariş Grafiği",
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 10),
+          SizedBox(
+            height: 300,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: true),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 32,
+                      interval: 1, // Günlük sıçramalar
+                      getTitlesWidget: (value, meta) {
+                        if (value.toInt() >= 0 &&
+                            value.toInt() < dailyOrdersData.length) {
+                          DateTime date = DateTime.now().subtract(
+                            Duration(days: 6 - value.toInt()),
+                          );
+                          return Text(
+                            "${date.day}/${date.month}",
+                            style: TextStyle(fontSize: 10),
+                          );
+                        }
+                        return Text('');
+                      },
+                    ),
                   ),
-                ),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    interval: 1, // Y ekseninde sıçramalar
-                    reservedSize: 28,
-                  ),
-                ),
-              ),
-              borderData: FlBorderData(show: true),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: dailyOrdersData,
-                  isCurved: false,
-                  gradient: LinearGradient(
-                    colors: [Colors.orange, Colors.deepOrange],
-                  ),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color.fromARGB(255, 255, 255, 255).withOpacity(0.3),
-                        Colors.deepOrange.withOpacity(0.3),
-                      ],
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      interval: 1, // Y ekseninde sıçramalar
+                      reservedSize: 28,
                     ),
                   ),
                 ),
-              ],
+                borderData: FlBorderData(show: true),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: dailyOrdersData,
+                    isCurved: false,
+                    gradient: LinearGradient(
+                      colors: [Colors.orange, Colors.deepOrange],
+                    ),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color.fromARGB(255, 255, 255, 255)
+                              .withOpacity(0.3),
+                          Colors.deepOrange.withOpacity(0.3),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
-Widget buildActionButton() {
-  return ElevatedButton.icon(
-    onPressed: toggleShopStatus,
-    style: ElevatedButton.styleFrom(
-      backgroundColor: isOpen ? Colors.red : Colors.green,
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        ],
       ),
-    ),
-    icon: Icon(isOpen ? Icons.close : Icons.check, color: Colors.white),
-    label: Text(
-      isOpen ? "Mağazayı Kapat" : "Mağazayı Aç",
-      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-    ),
-  );
-}
+    );
+  }
+
+  Widget buildActionButton() {
+    return ElevatedButton.icon(
+      onPressed: toggleShopStatus,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isOpen ? Colors.red : Colors.green,
+        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      icon: Icon(isOpen ? Icons.close : Icons.check, color: Colors.white),
+      label: Text(
+        isOpen ? "Mağazayı Kapat" : "Mağazayı Aç",
+        style: TextStyle(
+            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+      ),
+    );
+  }
+
   Widget buildInfoCard(String title, String value, Color color) {
     return Container(
       width: 150,
@@ -430,7 +449,8 @@ Widget buildActionButton() {
       if (shopId != null) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => PastOrdersScreen(shopId: shopId)),
+          MaterialPageRoute(
+              builder: (context) => PastOrdersScreen(shopId: shopId)),
         );
       }
     }

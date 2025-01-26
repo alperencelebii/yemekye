@@ -41,7 +41,8 @@ class YatayRestaurantCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Sağ ve soldan 16px boşluk
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16.0, vertical: 8.0), // Sağ ve soldan 16px boşluk
         child: Container(
           width: screenWidth, // Tam ekran genişlik
           decoration: BoxDecoration(
@@ -61,8 +62,8 @@ class YatayRestaurantCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 8.0, horizontal: 6.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -111,7 +112,9 @@ class YatayRestaurantCard extends StatelessWidget {
                           Icon(
                             isOpen ? Icons.check_circle : Icons.cancel,
                             size: 14,
-                            color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
+                            color: isOpen
+                                ? const Color(0xFF52BF71)
+                                : const Color(0xFFFF6767),
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -119,7 +122,9 @@ class YatayRestaurantCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
+                              color: isOpen
+                                  ? const Color(0xFF52BF71)
+                                  : const Color(0xFFFF6767),
                             ),
                           ),
                         ],
