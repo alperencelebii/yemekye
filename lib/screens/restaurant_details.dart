@@ -79,13 +79,20 @@ class RestaurantDetails extends StatelessWidget {
                                 fontFamily: 'BeVietnamPro',
                               ),
                             ),
-                            Row(
-                              children: const [
-                                Icon(Icons.favorite_border,
-                                    color: Colors.black),
-                                Icon(Icons.more_horiz,
-                                    color: Color(0xFF1D1D1D)),
+                            PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'report') {
+                                  _showReportDialog(context, shopDoc.id);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'report',
+                                  child: Text('Rapor Et'),
+                                ),
                               ],
+                              icon: const Icon(Icons.more_horiz,
+                                  color: Color(0xFF1D1D1D)),
                             ),
                           ],
                         ),
@@ -184,5 +191,63 @@ class RestaurantDetails extends StatelessWidget {
         );
       },
     );
+  }
+
+  void _showReportDialog(BuildContext context, String shopId) {
+    final TextEditingController topicController = TextEditingController();
+    final TextEditingController messageController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Rapor Et'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: topicController,
+                decoration: const InputDecoration(labelText: 'Konu'),
+              ),
+              TextField(
+                controller: messageController,
+                decoration: const InputDecoration(labelText: 'Mesaj'),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final topic = topicController.text.trim();
+                final message = messageController.text.trim();
+                if (topic.isNotEmpty && message.isNotEmpty) {
+                  _reportShop(shopId, topic, message);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Gönder'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _reportShop(String shopId, String topic, String message) async {
+    final reportCollection = FirebaseFirestore.instance.collection('reports');
+
+    await reportCollection.add({
+      'shopId': shopId,
+      'topic': topic,
+      'message': message,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    debugPrint("Mağaza raporlandı: $shopId, Konu: $topic");
   }
 }

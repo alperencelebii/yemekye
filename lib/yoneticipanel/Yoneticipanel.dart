@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:yemekye/yoneticipanel/AddUsers.dart';
+import 'package:yemekye/yoneticipanel/reports/reportlistpage.dart';
 
 class Yonetici extends StatefulWidget {
   @override
@@ -19,6 +20,17 @@ class _YoneticiState extends State<Yonetici> {
       appBar: AppBar(
         title: Text("Yönetici Paneli"),
         backgroundColor: Colors.orange,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.report),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ReportListPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
