@@ -231,14 +231,6 @@ class _AdminPanelState extends State<AdminPanel> {
               MaterialPageRoute(builder: (context) => ShopSettings()),
             ),
           ),
-          ListTile(
-            leading: Icon(Icons.settings),
-            title: Text("Ayarlar"),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
-            ),
-          ),
           Divider(),
           isLoading
               ? Center(child: CircularProgressIndicator())

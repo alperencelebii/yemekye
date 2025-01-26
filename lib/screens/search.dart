@@ -166,8 +166,10 @@ class _SearchPageState extends State<SearchPage> {
                                         style: const TextStyle(
                                             color: Colors.grey),
                                       ),
+                                      
                                     ),
                                   ),
+                                
                                 ),
                                 const SizedBox(height: 10),
                               ],
