@@ -223,6 +223,7 @@ Future<void> fetchOrdersData() async {
               MaterialPageRoute(builder: (context) => ShopSettings()),
             ),
           ),
+          
           Divider(),
           isLoading
               ? Center(child: CircularProgressIndicator())
@@ -236,6 +237,14 @@ Future<void> fetchOrdersData() async {
                       leading: Icon(Icons.error),
                       title: Text("Mağaza bilgisi bulunamadı"),
                     ),
+ ListTile(
+            leading: Icon(Icons.qr_code_2),
+            title: Text("Qr Kod Oku"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
+            ),
+          ),
         ],
       ),
     );
