@@ -10,6 +10,7 @@ class YatayRestaurantCard extends StatelessWidget {
   final double shopLatitude;
   final double shopLongitude;
   final VoidCallback onTap;
+  final bool isOpen; // Yeni eklenen parametre
 
   const YatayRestaurantCard({
     Key? key,
@@ -20,6 +21,7 @@ class YatayRestaurantCard extends StatelessWidget {
     required this.shopLatitude,
     required this.shopLongitude,
     required this.onTap,
+    required this.isOpen, // Yeni parametre
   }) : super(key: key);
 
   @override
@@ -99,6 +101,25 @@ class YatayRestaurantCard extends StatelessWidget {
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            isOpen ? Icons.check_circle : Icons.cancel,
+                            size: 14,
+                            color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isOpen ? 'Açık' : 'Kapalı',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isOpen ? const Color(0xFF52BF71) : const Color(0xFFFF6767),
                             ),
                           ),
                         ],

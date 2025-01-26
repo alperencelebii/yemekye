@@ -219,29 +219,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // RestaurantListCard'ları yatay olarak sıralama
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: shops.map((shop) {
-                              final shopData =
-                                  shop.data() as Map<String, dynamic>;
-                              return RestaurantListCard(
-                                shopName: shopData['name'] ?? 'Mağaza Adı Yok',
-                                shopAddress:
-                                    shopData['address'] ?? 'Adres Bilgisi Yok',
-                                shopImagePath: shopData['image'] ??
-                                    'assets/images/rest.jpg',
-                                userLocation:
-                                    selectedPosition ?? const LatLng(0, 0),
-                                shopLatitude: shopData['latitude'] ?? 0.0,
-                                shopLongitude: shopData['longitude'] ?? 0.0,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => RestaurantDetails(
-                                        shopName: shopData['name'],
-                                        shopAddress: shopData['address'],
+SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: shops.map((shop) {
+          final shopData = shop.data() as Map<String, dynamic>;
+          return RestaurantListCard(
+            shopName: shopData['name'] ?? 'Mağaza Adı Yok',
+            shopAddress: shopData['address'] ?? 'Adres Bilgisi Yok',
+            shopImagePath: shopData['image'] ?? 'assets/images/rest.jpg',
+            userLocation: selectedPosition ?? const LatLng(0, 0),
+            shopLatitude: shopData['latitude'] ?? 0.0,
+            shopLongitude: shopData['longitude'] ?? 0.0,
+            isOpen: shopData['isOpen'] ?? false, // Firestore'dan isOpen bilgisi
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => RestaurantDetails(
+                    shopName: shopData['name'],
+                    shopAddress: shopData['address'],
                                       ),
                                     ),
                                   );
@@ -293,15 +290,13 @@ class _HomeScreenState extends State<HomeScreen> {
                             final shopData =
                                 shop.data() as Map<String, dynamic>;
                             return YatayRestaurantCard(
-                              shopName: shopData['name'] ?? 'Mağaza Adı Yok',
-                              shopAddress:
-                                  shopData['address'] ?? 'Adres Bilgisi Yok',
-                              shopImagePath:
-                                  shopData['image'] ?? 'assets/images/rest.jpg',
-                              userLocation:
-                                  selectedPosition ?? const LatLng(0, 0),
-                              shopLatitude: shopData['latitude'] ?? 0.0,
-                              shopLongitude: shopData['longitude'] ?? 0.0,
+            shopName: shopData['name'] ?? 'Mağaza Adı Yok',
+            shopAddress: shopData['address'] ?? 'Adres Bilgisi Yok',
+            shopImagePath: shopData['image'] ?? 'assets/images/rest.jpg',
+            userLocation: selectedPosition ?? const LatLng(0, 0),
+            shopLatitude: shopData['latitude'] ?? 0.0,
+            shopLongitude: shopData['longitude'] ?? 0.0,
+            isOpen: shopData['isOpen'] ?? false,
                               onTap: () {
                                 Navigator.push(
                                   context,
