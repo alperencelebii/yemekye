@@ -3,7 +3,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
-import 'package:yemekye/components/models/popular_restaurant_list_card.dart';
 import 'package:yemekye/components/models/yak%C4%B1nlar/yakin_restaurant_list_card.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -233,6 +232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         builder: (context) => RestaurantDetails(
                                           shopName: shopData['title'],
                                           shopAddress: shopData['snippet'],
+                                          isOpen: shopData['isOpen'] ?? false,
                                         ),
                                       ),
                                     );
@@ -258,6 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         builder: (context) => RestaurantDetails(
                                           shopName: shopData['title'],
                                           shopAddress: shopData['snippet'],
+                                          isOpen: shopData['isOpen'] ?? false,
                                         ),
                                       ),
                                     );
@@ -302,6 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     builder: (context) => RestaurantDetails(
                                       shopName: shopData['name'],
                                       shopAddress: shopData['address'],
+                                      isOpen: shopData['isOpen'] ?? false,
                                     ),
                                   ),
                                 );
