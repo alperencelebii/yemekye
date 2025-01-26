@@ -244,6 +244,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       builder: (context) => RestaurantDetails(
                                         shopName: shopData['name'],
                                         shopAddress: shopData['address'],
+                                        isOpen: shopData['isOpen'] ??false,
                                       ),
                                     ),
                                   );
@@ -267,6 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         builder: (context) => RestaurantDetails(
                                           shopName: shopData['title'],
                                           shopAddress: shopData['snippet'],
+                                           isOpen: shopData['isOpen'] ??false,
                                         ),
                                       ),
                                     );
@@ -312,6 +314,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     builder: (context) => RestaurantDetails(
                                       shopName: shopData['name'],
                                       shopAddress: shopData['address'],
+                                       isOpen: shopData['isOpen'] ??false,
                                     ),
                                   ),
                                 );

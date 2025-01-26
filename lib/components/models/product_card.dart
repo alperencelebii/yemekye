@@ -8,6 +8,7 @@ class ProductCard extends StatelessWidget {
   final String productName;
   final double productPrice;
   final int piece;
+  final bool isOpen;
 
   const ProductCard({
     Key? key,
@@ -16,6 +17,7 @@ class ProductCard extends StatelessWidget {
     required this.productName,
     required this.productPrice,
     required this.piece,
+    required this.isOpen
   }) : super(key: key);
 
   @override
@@ -87,7 +89,7 @@ class ProductCard extends StatelessWidget {
             GestureDetector(
               onTap: () {
                 CartManager.addToCart(shopId, productId, productName,
-                    productPrice, piece, context);
+                    productPrice, piece, context, isOpen);
               },
               child: Container(
                 decoration: BoxDecoration(
