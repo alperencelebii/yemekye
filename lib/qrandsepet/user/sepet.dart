@@ -107,95 +107,135 @@ class _SepetScreenState extends State<SepetScreen> {
   }
 
   Future<void> generateQRCode() async {
-    if (CartManager._shopId == null || CartManager.cartItems.isEmpty) {
-      showSnackbar(context, "Sepet boş!");
-      return;
+  if (CartManager._shopId == null || CartManager.cartItems.isEmpty) {
+    showSnackbar(context, "Sepet boş!");
+    return;
+  }
+
+  try {
+    final firestore = FirebaseFirestore.instance;
+
+    // Mevcut en yüksek sipariş numarasını al
+    final querySnapshot = await firestore
+        .collection('carts')
+        .orderBy('orderNumber', descending: true)
+        .limit(1)
+        .get();
+
+    int orderNumber = 1; // İlk sipariş için başlangıç numarası
+    if (querySnapshot.docs.isNotEmpty) {
+      orderNumber = (querySnapshot.docs.first.data()['orderNumber'] ?? 0) + 1;
     }
 
-    try {
-      final firestore = FirebaseFirestore.instance;
+    // Yeni sepet belgesini oluştur
+    final cartDoc = await firestore.collection('carts').add({
+  'createdAt': FieldValue.serverTimestamp(),
+  'products': CartManager.cartItems,
+  'shopId': CartManager._shopId,
+  'orderNumber': orderNumber, // Sipariş numarası
+  'status': 'Bekleniyor',
+});
 
-      // Mevcut en yüksek sipariş numarasını al
-      final querySnapshot = await firestore
-          .collection('carts')
-          .orderBy('orderNumber', descending: true)
-          .limit(1)
-          .get();
+    final qrString =
+        'https://example.com/cart?cartId=${cartDoc.id}&shopId=${CartManager._shopId}';
 
-      int orderNumber = 1; // İlk sipariş için başlangıç numarası
-      if (querySnapshot.docs.isNotEmpty) {
-        orderNumber = (querySnapshot.docs.first.data()['orderNumber'] ?? 0) + 1;
-      }
+    // Firestore'daki 'status' alanını dinle
+showDialog(
+  context: context,
+  barrierDismissible: false,
+  builder: (BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: firestore.collection('carts').doc(cartDoc.id).snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-      // Yeni sepet belgesini oluştur
-      final cartDoc = await firestore.collection('carts').add({
-        'createdAt': FieldValue.serverTimestamp(),
-        'deviceId': 'exampleDeviceId', // Cihaz ID'si
-        'products': CartManager.cartItems,
-        'shopId': CartManager._shopId,
-        'orderNumber': orderNumber, // Sipariş numarası
-      });
+        if (snapshot.hasData && snapshot.data != null) {
+          final data = snapshot.data!.data() as Map<String, dynamic>;
 
-      final qrString =
-          'https://example.com/cart?cartId=${cartDoc.id}&shopId=${CartManager._shopId}';
-
-      // Onay ekranı
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                Icon(Icons.check_circle,
-                    color: Colors.green, size: 80), // Yeşil Tik
-                const SizedBox(height: 10),
-                Text(
-                  'Satış Onaylandı!',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+          // Status kontrolü
+          if (data['status'] == 'Onaylandı') {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Icon(Icons.check_circle,
+                      color: Colors.green, size: 80), // Yeşil Tik
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Satış Onaylandı!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Sipariş Numaranız: $orderNumber',
-                  style: const TextStyle(color: Colors.black87),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-                QrImageView(
-                  data: qrString,
-                  size: 200.0,
-                  backgroundColor: Colors.white,
+                  const SizedBox(height: 10),
+                  Text(
+                    'Sipariş Numaranız: $orderNumber',
+                    style: const TextStyle(color: Colors.black87),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Toplam: ₺${calculateTotalPrice().toStringAsFixed(2)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  child: const Text('Tamam',
+                      style: TextStyle(color: Color(0xFFF9A602))),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    CartManager.clearCart(); // Sepeti burada temizle
+                    setState(() {}); // UI'yi güncellemek için
+                  },
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                child: const Text('Tamam',
-                    style: TextStyle(color: Color(0xFFF9A602))),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  CartManager.clearCart(); // Sepeti burada temizle
-                  setState(() {}); // UI'yi güncellemek için
-                },
+            );
+          }
+        }
+
+        // Bekleme ekranında QR kodu göster
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const SizedBox(height: 20),
+              if (snapshot.hasData &&
+                  snapshot.data != null &&
+                  snapshot.data!['status'] == 'Onay Bekleniyor') ...[
+                const Text(
+                  'Sipariş onayı bekleniyor...',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+              QrImageView(
+                data: qrString,
+                size: 200.0,
+                backgroundColor: Colors.white,
               ),
             ],
-          );
-        },
-      );
-    } catch (e) {
-      showSnackbar(context, "Sipariş oluşturulamadı: $e");
-    }
+          ),
+        );
+      },
+    );
+  },
+);
+  } catch (e) {
+    showSnackbar(context, "Sipariş oluşturulamadı: $e");
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
