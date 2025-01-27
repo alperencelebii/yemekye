@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'restaurant_details.dart'; // RestaurantDetails sayfasını buraya import edin
 
 class SearchPage extends StatefulWidget {
   const SearchPage({Key? key}) : super(key: key);
@@ -34,7 +35,7 @@ class _SearchPageState extends State<SearchPage> {
                 });
               },
               decoration: InputDecoration(
-                hintText: 'Ürün Ara...',
+                hintText: 'Ürün veya Mağaza Ara...',
                 hintStyle: const TextStyle(color: Colors.grey),
                 filled: true,
                 fillColor: Colors.grey[200],
@@ -113,15 +114,40 @@ class _SearchPageState extends State<SearchPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 // Mağaza Başlığı
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8.0),
-                                  child: Text(
-                                    shopName,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.orangeAccent,
+                                GestureDetector(
+                                  onTap: () async {
+                                    final shopDoc = await FirebaseFirestore
+                                        .instance
+                                        .collection('shops')
+                                        .where('name', isEqualTo: shopName)
+                                        .get();
+
+                                    if (shopDoc.docs.isNotEmpty) {
+                                      final shopData =
+                                          shopDoc.docs.first.data();
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              RestaurantDetails(
+                                            shopName: shopData['name'],
+                                            shopAddress: shopData['address'],
+                                            isOpen: shopData['isOpen'] ?? false,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0),
+                                    child: Text(
+                                      shopName,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.orangeAccent,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -166,10 +192,21 @@ class _SearchPageState extends State<SearchPage> {
                                         style: const TextStyle(
                                             color: Colors.grey),
                                       ),
-                                      
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                RestaurantDetails(
+                                              shopName: shopName,
+                                              shopAddress: '', // Adresi alabiliyorsanız buraya ekleyin
+                                              isOpen: true, // Uygun değeri ekleyin
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
-                                
                                 ),
                                 const SizedBox(height: 10),
                               ],

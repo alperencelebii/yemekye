@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:yemekye/components/models/product_card.dart';
 
 class RestaurantDetails extends StatelessWidget {
@@ -18,6 +19,7 @@ class RestaurantDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        // Shop bilgilerini çekiyoruz
         future: FirebaseFirestore.instance
             .collection('shops')
             .where('name', isEqualTo: shopName)
@@ -105,11 +107,53 @@ class RestaurantDetails extends StatelessWidget {
                                 color: Color(0xFF22BA61)),
                             const SizedBox(width: 4),
                             Expanded(
-                              child: Text(
-                                shopAddress,
-                                style: const TextStyle(fontSize: 14),
-                                softWrap: true,
-                                overflow: TextOverflow.visible,
+                              child: GestureDetector(
+                                onTap: () async {
+                                  // Marker konumunu alalım
+                                  final markerSnapshot = await FirebaseFirestore
+                                      .instance
+                                      .collection('markers')
+                                      .where('shopId', isEqualTo: shopDoc.id)
+                                      .get();
+
+                                  if (markerSnapshot.docs.isNotEmpty) {
+                                    final markerData =
+                                        markerSnapshot.docs.first.data();
+                                    final latitude =
+                                        markerData['latitude'] as double?;
+                                    final longitude =
+                                        markerData['longitude'] as double?;
+
+                                    if (latitude != null && longitude != null) {
+                                      final Uri googleMapsUri = Uri.parse(
+                                          'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
+
+                                      try {
+                                        if (await launchUrl(googleMapsUri)) {
+                                          // Başarılı bir şekilde Google Maps açıldı
+                                          debugPrint("Google Maps açıldı.");
+                                        } else {
+                                          // Google Maps açılamadı
+                                          debugPrint("Google Maps açılamadı.");
+                                        }
+                                      } catch (e) {
+                                        debugPrint("Hata oluştu: $e");
+                                      }
+                                    } else {
+                                      debugPrint("Konum bilgisi eksik.");
+                                    }
+                                  }
+                                },
+                                child: Text(
+                                  shopAddress,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    decoration: TextDecoration.underline,
+                                    color: Colors.blue,
+                                  ),
+                                  softWrap: true,
+                                  overflow: TextOverflow.visible,
+                                ),
                               ),
                             ),
                           ],
@@ -185,7 +229,6 @@ class RestaurantDetails extends StatelessWidget {
                     isOpen: isOpen,
                     productPrice: (product['price'] as num?)?.toDouble() ?? 0.0,
                     piece: product['piece'] ?? 0,
-
                     shopId: shopDoc.id, // Firestore belge kimliği
                   );
                 }).toList(),
