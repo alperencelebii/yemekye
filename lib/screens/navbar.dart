@@ -20,18 +20,18 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
   final List<String> _icons = [
     'assets/icons/home.svg',
     'assets/icons/ssearch.svg',
-    'assets/icons/ssearch.svg',
     'assets/icons/pie.svg',
     'assets/icons/clock.svg',
+    'assets/icons/li_user.svg',
     'assets/icons/li_user.svg',
   ];
 
   final List<String> _labels = [
     'Home',
     'Search',
-    'arama',
     'Favorites',
     'History',
+    'Profile',
     'Profile',
   ];
 
@@ -41,7 +41,8 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     SearchPage(),
     QRCodeScannerScreen(),
     SepetScreen(),
-    Yonetici()
+    Yonetici(),
+
   ];
 
   @override
