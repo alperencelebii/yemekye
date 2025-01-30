@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:yemekye/adminpanel/addproduct.dart';
+import 'package:yemekye/adminpanel/campainpage.dart';
 import 'package:yemekye/adminpanel/myProducts.dart';
 import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
 import 'package:yemekye/adminpanel/pastOrders.dart';
@@ -156,6 +157,18 @@ class _AdminPanelState extends State<AdminPanel> {
           "Mağaza Paneli",
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.local_offer), // Kampanya ikonu
+            tooltip: "Kampanyalar",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CampaignPage()),
+              );
+            },
+          ),
+        ],
         leading: IconButton(
           icon: Icon(Icons.menu),
           onPressed: () {

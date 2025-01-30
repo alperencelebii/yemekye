@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:yemekye/adminpanel/campainpage.dart';
 
 class MyProducts extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -24,6 +25,18 @@ class MyProducts extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Ürünlerim"),
         backgroundColor: Colors.orange,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.local_offer), // Kampanya ikonu
+            tooltip: "Kampanyalar",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CampaignPage()),
+              );
+            },
+          ),
+        ],
       ),
       body: FutureBuilder(
         future: _getUserShopId(),
