@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -54,36 +55,64 @@ class _CampaignPageState extends State<CampaignPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("$productName için Kampanya"),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            "$productName için Kampanya",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: discountController,
                 keyboardType: TextInputType.number,
-                decoration: InputDecoration(labelText: "İndirim Oranı (%)"),
+                decoration: InputDecoration(
+                  labelText: "İndirim Oranı (%)",
+                  prefixIcon: Icon(Icons.percent),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
               ),
+              SizedBox(height: 10),
               TextField(
                 controller: startTimeController,
                 readOnly: true,
                 onTap: () => _selectTime(context, startTimeController),
-                decoration:
-                    InputDecoration(labelText: "Başlangıç Saati (HH:mm)"),
+                decoration: InputDecoration(
+                  labelText: "Başlangıç Saati (HH:mm)",
+                  prefixIcon: Icon(Icons.access_time),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
               ),
+              SizedBox(height: 10),
               TextField(
                 controller: endTimeController,
                 readOnly: true,
                 onTap: () => _selectTime(context, endTimeController),
-                decoration: InputDecoration(labelText: "Bitiş Saati (HH:mm)"),
+                decoration: InputDecoration(
+                  labelText: "Bitiş Saati (HH:mm)",
+                  prefixIcon: Icon(Icons.timer_off),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                ),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text("İptal"),
+              child: Text("İptal", style: TextStyle(color: Colors.red)),
             ),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+              ),
               onPressed: () {
                 if (discountController.text.isNotEmpty &&
                     startTimeController.text.isNotEmpty &&
@@ -126,15 +155,105 @@ class _CampaignPageState extends State<CampaignPage> {
 
   Future<void> _selectTime(
       BuildContext context, TextEditingController controller) async {
-    TimeOfDay? picked = await showTimePicker(
+    DateTime now = DateTime.now();
+    int selectedHour = now.hour;
+    int selectedMinute = now.minute;
+
+    await showModalBottomSheet(
       context: context,
-      initialTime: TimeOfDay.now(),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          height: 300,
+          child: Column(
+            children: [
+              // Başlık
+              Text(
+                "Saat Seç",
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+
+              // Saat ve Dakika Seçici
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Saat Picker
+                    Expanded(
+                      child: CupertinoPicker(
+                        itemExtent: 40,
+                        scrollController: FixedExtentScrollController(
+                            initialItem: selectedHour),
+                        onSelectedItemChanged: (int value) {
+                          selectedHour = value;
+                        },
+                        children: List.generate(
+                          24,
+                          (index) => Center(
+                            child: Text(
+                              index.toString().padLeft(2, '0'),
+                              style: TextStyle(fontSize: 24),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Text(":",
+                        style: TextStyle(fontSize: 28, color: Colors.grey)),
+                    // Dakika Picker
+                    Expanded(
+                      child: CupertinoPicker(
+                        itemExtent: 40,
+                        scrollController: FixedExtentScrollController(
+                            initialItem: selectedMinute),
+                        onSelectedItemChanged: (int value) {
+                          selectedMinute = value;
+                        },
+                        children: List.generate(
+                          60,
+                          (index) => Center(
+                            child: Text(
+                              index.toString().padLeft(2, '0'),
+                              style: TextStyle(fontSize: 24),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 10),
+
+              // Kaydet Butonu
+              ElevatedButton.icon(
+                onPressed: () {
+                  controller.text =
+                      '${selectedHour.toString().padLeft(2, '0')}:${selectedMinute.toString().padLeft(2, '0')}';
+                  Navigator.pop(context);
+                },
+                icon: Icon(Icons.check_circle, color: Colors.white),
+                label: Text("Kaydet"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                  textStyle:
+                      TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-    if (picked != null) {
-      String formattedTime =
-          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-      controller.text = formattedTime;
-    }
   }
 
   @override
