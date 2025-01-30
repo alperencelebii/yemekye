@@ -22,7 +22,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final CollectionReference usersCollection =
-      FirebaseFirestore.instance.collection('users');
+      FirebaseFirestore.instance.collection('sellers');
 
   @override
   Widget build(BuildContext context) {
@@ -276,7 +276,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       // Mağaza ID'sine kullanıcının ID'sini ekle
       await FirebaseFirestore.instance.collection('shops').doc(shopId).update({
-        'users': FieldValue.arrayUnion([userCredential.user!.uid]),
+        'sellers': FieldValue.arrayUnion([userCredential.user!.uid]),
       });
 
       // Başarılı kayıt sonrasında Login sayfasına yönlendirme

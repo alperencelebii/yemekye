@@ -37,7 +37,7 @@ class _AdminPanelState extends State<AdminPanel> {
       final user = _auth.currentUser;
       if (user != null) {
         final userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
+            await _firestore.collection('sellers').doc(user.uid).get();
         final shopId = userDoc.data()?['shopid'];
 
         if (shopId != null) {
@@ -68,7 +68,7 @@ class _AdminPanelState extends State<AdminPanel> {
       final user = _auth.currentUser;
       if (user != null) {
         final userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
+            await _firestore.collection('sellers').doc(user.uid).get();
         final shopId = userDoc.data()?['shopid'];
 
         if (shopId != null) {
@@ -125,7 +125,7 @@ class _AdminPanelState extends State<AdminPanel> {
       final user = _auth.currentUser;
       if (user != null) {
         final userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
+            await _firestore.collection('sellers').doc(user.uid).get();
         final shopId = userDoc.data()?['shopid'];
 
         if (shopId != null) {
@@ -396,103 +396,103 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   void showSubMenu(BuildContext context, String menuTitle) {
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    backgroundColor: Colors.white,
-    builder: (context) {
-      if (menuTitle == "Ürünler") {
-        return Container(
-          decoration: const BoxDecoration(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFFFE082),
-                Color(0xFFF9A602),
-              ],
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        if (menuTitle == "Ürünler") {
+          return Container(
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFE082),
+                  Color(0xFFF9A602),
+                ],
+              ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Top pull indicator
-                Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top pull indicator
+                  Container(
+                    width: 50,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  "Ürünler Menüsü",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                ListTile(
-                  leading: const Icon(Icons.add_box, color: Colors.white),
-                  title: const Text(
-                    "Ürün Ekle",
+                  const SizedBox(height: 16),
+                  const Text(
+                    "Ürünler Menüsü",
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => AddProduct()),
-                    );
-                  },
-                ),
-                Divider(color: Colors.white.withOpacity(0.5)),
-                ListTile(
-                  leading: const Icon(Icons.list, color: Colors.white),
-                  title: const Text(
-                    "Ürünlerim",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  const SizedBox(height: 20),
+                  ListTile(
+                    leading: const Icon(Icons.add_box, color: Colors.white),
+                    title: const Text(
+                      "Ürün Ekle",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => AddProduct()),
+                      );
+                    },
                   ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => MyProducts()),
-                    );
-                  },
-                ),
-                const SizedBox(height: 10),
-              ],
+                  Divider(color: Colors.white.withOpacity(0.5)),
+                  ListTile(
+                    leading: const Icon(Icons.list, color: Colors.white),
+                    title: const Text(
+                      "Ürünlerim",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => MyProducts()),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              ),
             ),
-          ),
-        );
-      }
-      return const SizedBox.shrink();
-    },
-  );
-}
-
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
 
   void navigateToPastOrders() async {
     final user = _auth.currentUser;
     if (user != null) {
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      final userDoc =
+          await _firestore.collection('sellers').doc(user.uid).get();
       final shopId = userDoc.data()?['shopid'];
       if (shopId != null) {
         Navigator.push(

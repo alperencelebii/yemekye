@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 class AddUserPage extends StatelessWidget {
   final String shopId;
 
@@ -13,10 +14,10 @@ class AddUserPage extends StatelessWidget {
       final shopData = shopSnapshot.data() as Map<String, dynamic>?;
 
       if (shopData != null) {
-        List<dynamic> users = shopData['users'] ?? [];
+        List<dynamic> users = shopData['sellers'] ?? [];
         if (!users.contains(userId)) {
           users.add(userId);
-          transaction.update(shopRef, {'users': users});
+          transaction.update(shopRef, {'sellers': users});
         }
       }
     });
@@ -30,7 +31,7 @@ class AddUserPage extends StatelessWidget {
         backgroundColor: Colors.orange,
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
+        stream: FirebaseFirestore.instance.collection('sellers').snapshots(),
         builder: (context, userSnapshot) {
           if (userSnapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());

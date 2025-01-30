@@ -45,7 +45,7 @@ class _AddProductState extends State<AddProduct> {
       }
 
       DocumentSnapshot userDoc =
-          await _firestore.collection('users').doc(currentUser.uid).get();
+          await _firestore.collection('sellers').doc(currentUser.uid).get();
 
       if (!userDoc.exists || userDoc['shopid'] == null) {
         _showErrorMessage("Kullanıcı bir mağazaya bağlı değil");
