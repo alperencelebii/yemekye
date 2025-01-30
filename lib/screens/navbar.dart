@@ -23,7 +23,6 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'assets/icons/pie.svg',
     'assets/icons/clock.svg',
     'assets/icons/li_user.svg',
-    'assets/icons/li_user.svg',
   ];
 
   final List<String> _labels = [
@@ -32,14 +31,12 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'Favorites',
     'History',
     'Profile',
-    'Profile',
   ];
 
   final List<Widget> _pages = [
     HomeScreen(),
-    AdminPanel(),
     SearchPage(),
-    QRCodeScannerScreen(),
+    AdminPanel(),
     SepetScreen(),
     Yonetici(),
 
