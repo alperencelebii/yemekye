@@ -33,170 +33,108 @@ class _CampaignPageState extends State<CampaignPage> {
     }
   }
 
-  Future<void> _createCampaign(String productId, String productName) async {
-    TextEditingController discountController = TextEditingController();
-    DateTime? startDate;
-    DateTime? endDate;
-    TimeOfDay? startTime;
-    TimeOfDay? endTime;
+  Future<void> _deleteExpiredCampaigns() async {
+    QuerySnapshot expiredCampaigns = await _firestore
+        .collection('campaigns')
+        .where('end_time',
+            isLessThan: Timestamp.now()) // Süresi dolmuş kampanyalar
+        .get();
 
-    showModalBottomSheet(
+    for (var doc in expiredCampaigns.docs) {
+      await _firestore.collection('campaigns').doc(doc.id).delete();
+    }
+  }
+
+  void _createCampaign(String productId, String productName) {
+    TextEditingController discountController = TextEditingController();
+    TextEditingController startTimeController = TextEditingController();
+    TextEditingController endTimeController = TextEditingController();
+
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-              left: 16,
-              right: 16,
-              top: 20),
-          child: Column(
+        return AlertDialog(
+          title: Text("$productName için Kampanya"),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text("$productName için Kampanya",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
               TextField(
                 controller: discountController,
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(labelText: "İndirim Oranı (%)"),
               ),
-              SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Başlangıç Tarihi:"),
-                  TextButton(
-                    onPressed: () async {
-                      DateTime? pickedDate = await _pickDate();
-                      if (pickedDate != null) {
-                        setState(() {
-                          startDate = pickedDate;
-                        });
-                      }
-                    },
-                    child: Text(startDate != null
-                        ? DateFormat.yMd().format(startDate!)
-                        : "Seç"),
-                  ),
-                ],
+              TextField(
+                controller: startTimeController,
+                readOnly: true,
+                onTap: () => _selectTime(context, startTimeController),
+                decoration:
+                    InputDecoration(labelText: "Başlangıç Saati (HH:mm)"),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Başlangıç Saati:"),
-                  TextButton(
-                    onPressed: () async {
-                      TimeOfDay? pickedTime = await _pickTime();
-                      if (pickedTime != null) {
-                        setState(() {
-                          startTime = pickedTime;
-                        });
-                      }
-                    },
-                    child: Text(
-                        startTime != null ? startTime!.format(context) : "Seç"),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Bitiş Tarihi:"),
-                  TextButton(
-                    onPressed: () async {
-                      DateTime? pickedDate = await _pickDate();
-                      if (pickedDate != null) {
-                        setState(() {
-                          endDate = pickedDate;
-                        });
-                      }
-                    },
-                    child: Text(endDate != null
-                        ? DateFormat.yMd().format(endDate!)
-                        : "Seç"),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Bitiş Saati:"),
-                  TextButton(
-                    onPressed: () async {
-                      TimeOfDay? pickedTime = await _pickTime();
-                      if (pickedTime != null) {
-                        setState(() {
-                          endTime = pickedTime;
-                        });
-                      }
-                    },
-                    child: Text(
-                        endTime != null ? endTime!.format(context) : "Seç"),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: () {
-                  if (discountController.text.isNotEmpty &&
-                      startDate != null &&
-                      startTime != null &&
-                      endDate != null &&
-                      endTime != null) {
-                    DateTime start = DateTime(
-                      startDate!.year,
-                      startDate!.month,
-                      startDate!.day,
-                      startTime!.hour,
-                      startTime!.minute,
-                    );
-                    DateTime end = DateTime(
-                      endDate!.year,
-                      endDate!.month,
-                      endDate!.day,
-                      endTime!.hour,
-                      endTime!.minute,
-                    );
-
-                    _firestore.collection('campaigns').add({
-                      'productid': productId,
-                      'discount': int.parse(discountController.text),
-                      'start_time': Timestamp.fromDate(start),
-                      'end_time': Timestamp.fromDate(end),
-                      'shopid': _shopId,
-                      'created_at': FieldValue.serverTimestamp(),
-                    });
-
-                    Navigator.pop(context);
-                  }
-                },
-                child: Text("Kampanya Oluştur"),
+              TextField(
+                controller: endTimeController,
+                readOnly: true,
+                onTap: () => _selectTime(context, endTimeController),
+                decoration: InputDecoration(labelText: "Bitiş Saati (HH:mm)"),
               ),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("İptal"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (discountController.text.isNotEmpty &&
+                    startTimeController.text.isNotEmpty &&
+                    endTimeController.text.isNotEmpty) {
+                  DateTime now = DateTime.now();
+                  DateTime startTime = DateTime(
+                    now.year,
+                    now.month,
+                    now.day,
+                    int.parse(startTimeController.text.split(':')[0]),
+                    int.parse(startTimeController.text.split(':')[1]),
+                  );
+                  DateTime endTime = DateTime(
+                    now.year,
+                    now.month,
+                    now.day,
+                    int.parse(endTimeController.text.split(':')[0]),
+                    int.parse(endTimeController.text.split(':')[1]),
+                  );
+
+                  _firestore.collection('campaigns').add({
+                    'productid': productId,
+                    'discount': int.parse(discountController.text),
+                    'start_time': Timestamp.fromDate(startTime),
+                    'end_time': Timestamp.fromDate(endTime),
+                    'shopid': _shopId,
+                    'created_at': FieldValue.serverTimestamp(),
+                  });
+
+                  Navigator.pop(context);
+                }
+              },
+              child: Text("Kaydet"),
+            ),
+          ],
         );
       },
     );
   }
 
-  Future<DateTime?> _pickDate() async {
-    return await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2101),
-    );
-  }
-
-  Future<TimeOfDay?> _pickTime() async {
-    return await showTimePicker(
+  Future<void> _selectTime(
+      BuildContext context, TextEditingController controller) async {
+    TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
     );
+    if (picked != null) {
+      String formattedTime =
+          '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      controller.text = formattedTime;
+    }
   }
 
   @override
@@ -213,39 +151,113 @@ class _CampaignPageState extends State<CampaignPage> {
         title: Text("Kampanyalarım"),
         backgroundColor: Colors.orange,
       ),
-      body: StreamBuilder(
-        stream: _firestore
-            .collection('shopproduct')
-            .where('shopid', isEqualTo: _shopId)
-            .snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (!snapshot.hasData) {
-            return Center(child: CircularProgressIndicator());
-          }
+      body: FutureBuilder(
+        future: _deleteExpiredCampaigns(),
+        builder: (context, snapshot) {
+          return StreamBuilder(
+            stream: _firestore
+                .collection('shopproduct')
+                .where('shopid', isEqualTo: _shopId)
+                .snapshots(),
+            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+              if (!snapshot.hasData) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-          List<DocumentSnapshot> shopProducts = snapshot.data!.docs;
+              List<DocumentSnapshot> shopProducts = snapshot.data!.docs;
 
-          return ListView.builder(
-            itemCount: shopProducts.length,
-            padding: EdgeInsets.all(8.0),
-            itemBuilder: (context, index) {
-              String productId = shopProducts[index]['productid'];
+              if (shopProducts.isEmpty) {
+                return Center(child: Text("Mağazanıza ait ürün bulunamadı."));
+              }
 
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                elevation: 3,
-                child: ListTile(
-                  title: Text("Ürün ID: $productId"),
-                  trailing: ElevatedButton(
-                    onPressed: () => _createCampaign(productId, "Ürün"),
-                    child: Text("İndirim Yap"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                    ),
-                  ),
-                ),
+              return ListView.builder(
+                itemCount: shopProducts.length,
+                padding: EdgeInsets.all(8.0),
+                itemBuilder: (context, index) {
+                  String productId = shopProducts[index]['productid'];
+
+                  return FutureBuilder(
+                    future:
+                        _firestore.collection('products').doc(productId).get(),
+                    builder: (context,
+                        AsyncSnapshot<DocumentSnapshot> productSnapshot) {
+                      if (!productSnapshot.hasData ||
+                          !productSnapshot.data!.exists) {
+                        return SizedBox.shrink();
+                      }
+
+                      var productData = productSnapshot.data!;
+                      String productName = productData['name'];
+
+                      return Card(
+                        margin: EdgeInsets.symmetric(
+                            vertical: 8.0, horizontal: 10.0),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        elevation: 3,
+                        child: ListTile(
+                          leading:
+                              Icon(Icons.shopping_bag, color: Colors.orange),
+                          title: Text(productName),
+                          subtitle: StreamBuilder(
+                            stream: _firestore
+                                .collection('campaigns')
+                                .where('productid', isEqualTo: productId)
+                                .snapshots(),
+                            builder: (context,
+                                AsyncSnapshot<QuerySnapshot> campaignSnapshot) {
+                              if (!campaignSnapshot.hasData ||
+                                  campaignSnapshot.data!.docs.isEmpty) {
+                                return Text(
+                                  "Kampanya Yok",
+                                  style: TextStyle(color: Colors.grey),
+                                );
+                              }
+
+                              var campaignData =
+                                  campaignSnapshot.data!.docs.first;
+                              DateTime endTime =
+                                  (campaignData['end_time'] as Timestamp)
+                                      .toDate();
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "İndirim: %${campaignData['discount']}",
+                                    style: TextStyle(color: Colors.green),
+                                  ),
+                                  Text(
+                                    "Saat: ${DateFormat.Hm().format((campaignData['start_time'] as Timestamp).toDate())} - ${DateFormat.Hm().format(endTime)}",
+                                    style: TextStyle(color: Colors.blueGrey),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => _firestore
+                                        .collection('campaigns')
+                                        .doc(campaignData.id)
+                                        .delete(),
+                                    child: Text(
+                                      "Kampanyayı Kaldır",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
+                          trailing: ElevatedButton(
+                            onPressed: () =>
+                                _createCampaign(productId, productName),
+                            child: Text("İndirim Yap"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
               );
             },
           );
