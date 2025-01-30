@@ -25,8 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<String> categories = ['Pastane', 'Kafe', 'Restoran', 'Döner'];
   int selectedCategoryIndex = 0;
 
-  String searchQuery = '';
-
   @override
   void initState() {
     super.initState();
@@ -168,21 +166,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              TextField(
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value.toLowerCase();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: 'Restoran Ara...',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  prefixIcon: const Icon(Icons.search),
-                ),
-              ),
-              const SizedBox(height: 20),
               const Text(
                 'En İyiler',
                 style: TextStyle(
@@ -205,14 +188,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Text('Hiçbir mağaza bulunamadı.'));
                   }
 
-                  final shops = snapshot.data!.docs
-                      .where((shop) =>
-                          shop['name']
-                              ?.toString()
-                              .toLowerCase()
-                              .contains(searchQuery) ??
-                          false)
-                      .toList();
+                  final shops = snapshot.data!.docs.toList();
 
                   return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
