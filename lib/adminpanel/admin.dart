@@ -170,7 +170,7 @@ class _AdminPanelState extends State<AdminPanel> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.local_offer), // Kampanya ikonu
+            icon: const Icon(Icons.add), // Kampanya ikonu
             tooltip: "Kampanyalar",
             onPressed: () {
               Navigator.push(

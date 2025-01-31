@@ -9,8 +9,8 @@ class PastCampaignsPage extends StatefulWidget {
 }
 
 class _PastCampaignsPageState extends State<PastCampaignsPage> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _shopId;
 
   @override
@@ -33,85 +33,6 @@ class _PastCampaignsPageState extends State<PastCampaignsPage> {
     }
   }
 
-  void _restartCampaign(DocumentSnapshot campaign) {
-    if (_shopId == null) return;
-
-    _firestore.collection('campaigns').add({
-      'productid': campaign['productid'],
-      'discount': campaign['discount'],
-      'start_time': campaign['start_time'],
-      'end_time': campaign['end_time'],
-      'shopid': _shopId,
-      'created_at': FieldValue.serverTimestamp(),
-    });
-  }
-
-  void _editAndRestartCampaign(DocumentSnapshot campaign) {
-    if (_shopId == null) return;
-
-    TextEditingController startTimeController = TextEditingController();
-    TextEditingController endTimeController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("Kampanya Saatlerini Düzenle"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: startTimeController,
-                readOnly: true,
-                onTap: () => _selectTime(context, startTimeController),
-                decoration: InputDecoration(labelText: "Başlangıç Saati"),
-              ),
-              TextField(
-                controller: endTimeController,
-                readOnly: true,
-                onTap: () => _selectTime(context, endTimeController),
-                decoration: InputDecoration(labelText: "Bitiş Saati"),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("İptal"),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _firestore.collection('campaigns').add({
-                  'productid': campaign['productid'],
-                  'discount': campaign['discount'],
-                  'start_time': Timestamp.fromDate(
-                      DateFormat("HH:mm").parse(startTimeController.text)),
-                  'end_time': Timestamp.fromDate(
-                      DateFormat("HH:mm").parse(endTimeController.text)),
-                  'shopid': _shopId,
-                  'created_at': FieldValue.serverTimestamp(),
-                });
-                Navigator.pop(context);
-              },
-              child: Text("Kaydet ve Başlat"),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _selectTime(
-      BuildContext context, TextEditingController controller) async {
-    TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-    if (picked != null) {
-      controller.text = picked.format(context);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     if (_shopId == null) {
@@ -122,49 +43,52 @@ class _PastCampaignsPageState extends State<PastCampaignsPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text("Geçmiş Kampanyalar")),
+      appBar: AppBar(
+        title: Text("Geçmiş Kampanyalar"),
+        backgroundColor: Colors.orange,
+      ),
       body: StreamBuilder(
         stream: _firestore
             .collection('campaigns')
-            .where('shopid',
-                isEqualTo: _shopId) // Sadece giriş yapanın shopId'sini göster
+            .where('shopid', isEqualTo: _shopId)
             .where('end_time', isLessThan: Timestamp.now())
-            .orderBy('end_time', descending: true)
             .snapshots(),
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (!snapshot.hasData) {
             return Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("Geçmiş kampanya bulunamadı."));
+          List<DocumentSnapshot> pastCampaigns = snapshot.data!.docs;
+
+          if (pastCampaigns.isEmpty) {
+            return Center(child: Text("Geçmiş kampanya bulunmamaktadır."));
           }
 
-          var campaigns = snapshot.data!.docs;
-
           return ListView.builder(
-            itemCount: campaigns.length,
+            itemCount: pastCampaigns.length,
+            padding: EdgeInsets.all(8.0),
             itemBuilder: (context, index) {
-              var campaign = campaigns[index];
+              var campaign = pastCampaigns[index];
+              DateTime startTime =
+                  (campaign['start_time'] as Timestamp).toDate();
               DateTime endTime = (campaign['end_time'] as Timestamp).toDate();
 
               return Card(
-                margin: EdgeInsets.all(8.0),
+                margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10)),
+                elevation: 3,
                 child: ListTile(
-                  title: Text("İndirim: %${campaign['discount']}"),
-                  subtitle:
-                      Text("Bitiş Saati: ${DateFormat.Hm().format(endTime)}"),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                  leading: Icon(Icons.history, color: Colors.orange),
+                  title: Text("Ürün ID: ${campaign['productid']}"),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.refresh, color: Colors.green),
-                        onPressed: () => _restartCampaign(campaign),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.edit, color: Colors.orange),
-                        onPressed: () => _editAndRestartCampaign(campaign),
-                      ),
+                      Text("İndirim: %${campaign['discount']}",
+                          style: TextStyle(color: Colors.green)),
+                      Text(
+                          "Saat: ${DateFormat.Hm().format(startTime)} - ${DateFormat.Hm().format(endTime)}",
+                          style: TextStyle(color: Colors.blueGrey)),
                     ],
                   ),
                 ),
