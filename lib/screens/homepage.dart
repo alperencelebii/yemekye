@@ -1,9 +1,12 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
+import 'package:yemekye/adminpanel/%C3%B6ne%C3%A7%C4%B1karma/featuredshops.dart';
 import 'package:yemekye/components/models/yak%C4%B1nlar/yakin_restaurant_list_card.dart';
+import 'package:yemekye/loginregister/login.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:yemekye/map/homescreen/locationpickermap.dart';
@@ -130,7 +133,18 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
-            onPressed: () {},
+            onPressed: () async {
+              try {
+                await FirebaseAuth.instance.signOut(); // Oturumu kapat
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                  (route) => false, // Tüm önceki sayfaları kaldır
+                );
+              } catch (e) {
+                debugPrint("Oturum kapatma hatası: $e");
+              }
+            },
           ),
         ],
       ),
@@ -175,6 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Color(0xFF1D1D1D),
                 ),
               ),
+              const SizedBox(height: 5),
+              const FeaturedShops(),
               const SizedBox(height: 5),
               StreamBuilder<QuerySnapshot>(
                 stream:

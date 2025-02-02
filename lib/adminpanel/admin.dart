@@ -34,6 +34,40 @@ class _AdminPanelState extends State<AdminPanel> {
     fetchOrdersData();
   }
 
+  Future<void> promoteShop() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userDoc =
+            await _firestore.collection('sellers').doc(user.uid).get();
+        final shopId = userDoc.data()?['shopid'];
+
+        if (shopId != null) {
+          // Shops koleksiyonundaki mağazayı güncelle
+          await _firestore.collection('shops').doc(shopId).update({
+            'isPromoted': true,
+            'promotionDate': FieldValue.serverTimestamp(),
+          });
+
+          // FeaturedShops koleksiyonuna ekle
+          final shopDoc =
+              await _firestore.collection('shops').doc(shopId).get();
+          if (shopDoc.exists) {
+            await _firestore.collection('FeaturedShops').doc(shopId).set(
+                  shopDoc.data()!,
+                );
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Mağaza başarıyla öne çıkarıldı!")),
+          );
+        }
+      }
+    } catch (e) {
+      print("Mağaza öne çıkarılırken hata oluştu: $e");
+    }
+  }
+
   Future<void> fetchShopInfo() async {
     try {
       final user = _auth.currentUser;
@@ -169,7 +203,6 @@ class _AdminPanelState extends State<AdminPanel> {
               );
             },
           ),
-
         ],
         leading: IconButton(
           icon: Icon(Icons.menu),
@@ -357,21 +390,44 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   Widget buildActionButton() {
-    return ElevatedButton.icon(
-      onPressed: toggleShopStatus,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isOpen ? Colors.red : Colors.green,
-        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return Column(
+      children: [
+        ElevatedButton.icon(
+          onPressed: toggleShopStatus,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isOpen ? Colors.red : Colors.green,
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: Icon(isOpen ? Icons.close : Icons.check, color: Colors.white),
+          label: Text(
+            isOpen ? "Mağazayı Kapat" : "Mağazayı Aç",
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
         ),
-      ),
-      icon: Icon(isOpen ? Icons.close : Icons.check, color: Colors.white),
-      label: Text(
-        isOpen ? "Mağazayı Kapat" : "Mağazayı Aç",
-        style: TextStyle(
-            fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-      ),
+        SizedBox(height: 12), // Boşluk bırak
+
+        // ✅ Mağazayı Öne Çıkarma Butonu
+        ElevatedButton.icon(
+          onPressed: promoteShop, // Yeni fonksiyon eklendi
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blueAccent,
+            padding: EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          icon: Icon(Icons.star, color: Colors.white),
+          label: Text(
+            "Mağazayı Öne Çıkar",
+            style: TextStyle(
+                fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ),
+      ],
     );
   }
 
