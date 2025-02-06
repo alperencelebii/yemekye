@@ -123,13 +123,13 @@ class _HomeScreenState extends State<HomeScreen> {
           style: TextStyle(
             fontFamily: 'BeVietnamPro',
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1D1D1D),
+            color: Colors.white,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF1D1D1D)),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.menu),
@@ -149,36 +149,45 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      // Konum Seçme Butonu (Padding'den etkilenmesin diye dışarıda)
+      SizedBox(
+        width: double.infinity, // Tam ekran genişlik
+        child: ElevatedButton(
+          onPressed: _promptLocationSelection,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFF9A602), // Turuncu renk
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.zero, // Köşeleri düzleştir
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 12), // Dikey padding
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ElevatedButton(
-                onPressed: _promptLocationSelection,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF9A602),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.location_on, color: Colors.white),
-                    const SizedBox(width: 5),
-                    Text(
-                      selectedAddress,
-                      style: const TextStyle(
-                        fontFamily: 'BeVietnamPro',
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+              const Icon(Icons.location_on, color: Colors.white),
+              const SizedBox(width: 5),
+              Text(
+                selectedAddress,
+                style: const TextStyle(
+                  fontFamily: 'BeVietnamPro',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white,
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+      
+     Padding(
+        padding: const EdgeInsets.all(16.0), // Buton hariç her şeye padding uygula
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               const SizedBox(height: 20),
               const Text(
                 'En İyiler',
@@ -309,7 +318,4 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
+],),),);}}
