@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
+import 'package:yemekye/adminpanel/adresupdate.dart';
+
 class ShopSettings extends StatefulWidget {
   @override
   _ShopSettingsState createState() => _ShopSettingsState();
@@ -192,7 +194,28 @@ class _ShopSettingsState extends State<ShopSettings> {
                   ),
                   const SizedBox(height: 20),
                   _buildTextField("Mağaza İsmi", _nameController),
-                  _buildTextField("Mağaza Adresi", _addressController),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                            "Mağaza Adresi", _addressController),
+                      ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => AddressUpdateScreen()),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF9A602),
+                        ),
+                        child: const Text("Adresi Güncelle"),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   const Text(
                     "Kategoriler",
