@@ -240,50 +240,148 @@ class RestaurantDetails extends StatelessWidget {
     );
   }
 
-  void _showReportDialog(BuildContext context, String shopId) {
-    final TextEditingController topicController = TextEditingController();
-    final TextEditingController messageController = TextEditingController();
+void _showReportDialog(BuildContext context, String shopId) {
+  final TextEditingController topicController = TextEditingController();
+  final TextEditingController messageController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Rapor Et'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: topicController,
-                decoration: const InputDecoration(labelText: 'Konu'),
-              ),
-              TextField(
-                controller: messageController,
-                decoration: const InputDecoration(labelText: 'Mesaj'),
-                maxLines: 3,
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 12,
+        backgroundColor: Colors.transparent, // 🔥 Şeffaf pencere
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black87, Colors.grey[900]!], // 🖤 Gradient arka plan
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.6),
+                blurRadius: 12,
+                spreadRadius: 3,
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final topic = topicController.text.trim();
-                final message = messageController.text.trim();
-                if (topic.isNotEmpty && message.isNotEmpty) {
-                  _reportShop(shopId, topic, message);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Gönder'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '⚠ Mağazayı Rapor Et',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white, // Beyaz yazı
+                      shadows: [
+                        Shadow(
+                          color: Colors.orangeAccent,
+                          blurRadius: 6, // Hafif glow efekti
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.warning_amber_rounded,
+                      color: Colors.orangeAccent, size: 30),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: topicController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Konu',
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.black54.withOpacity(0.8), // 🔥 Hafif şeffaf kutu
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon:
+                      const Icon(Icons.report, color: Colors.orangeAccent),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: messageController,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'Açıklama',
+                  labelStyle: const TextStyle(color: Colors.white70),
+                  filled: true,
+                  fillColor: Colors.black54.withOpacity(0.8),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  prefixIcon:
+                      const Icon(Icons.message, color: Colors.orangeAccent),
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white70,
+                    ),
+                    child: const Text('İptal'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      final topic = topicController.text.trim();
+                      final message = messageController.text.trim();
+                      if (topic.isNotEmpty && message.isNotEmpty) {
+                        _reportShop(shopId, topic, message);
+                        Navigator.pop(context);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orangeAccent,
+                      foregroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      shadowColor: Colors.orange.withOpacity(0.5), // ✨ Glow efekti
+                      elevation: 6,
+                    ),
+                    child: const Text(
+                      'Raporu Gönder',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black26,
+                            blurRadius: 2,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 
   void _reportShop(String shopId, String topic, String message) async {
     final reportCollection = FirebaseFirestore.instance.collection('reports');
