@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:yemekye/qrandsepet/user/sepet.dart';
 import 'package:intl/intl.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final String shopId;
   final String productId;
   final String productName;
@@ -22,11 +22,50 @@ class ProductCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _ProductCardState createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard>
+    with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotateAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    // Scale animation
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    // Rotate animation
+    _rotateAnimation = Tween<double>(begin: 0, end: 0.5).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _animateButton() {
+    _controller.forward().then((_) => _controller.reverse());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('campaigns')
-          .where('productid', isEqualTo: productId)
+          .where('productid', isEqualTo: widget.productId)
           .snapshots(),
       builder: (context, snapshot) {
         bool hasCampaign = false;
@@ -37,9 +76,9 @@ class ProductCard extends StatelessWidget {
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
           var campaignData = snapshot.data!.docs.first;
           int discountPercent = campaignData['discount'];
-          discountPrice = productPrice * (1 - discountPercent / 100);
+          discountPrice = widget.productPrice * (1 - discountPercent / 100);
           endTime = (campaignData['end_time'] as Timestamp).toDate();
-          hasCampaign = endTime.isAfter(DateTime.now()); // Kampanya aktif mi?
+          hasCampaign = endTime.isAfter(DateTime.now());
 
           if (!hasCampaign) {
             FirebaseFirestore.instance
@@ -92,7 +131,7 @@ class ProductCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            productName,
+                            widget.productName,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
@@ -108,7 +147,7 @@ class ProductCard extends StatelessWidget {
                                     Row(
                                       children: [
                                         Text(
-                                          "₺${productPrice.toStringAsFixed(2)}",
+                                          "₺${widget.productPrice.toStringAsFixed(2)}",
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.grey.shade600,
@@ -137,7 +176,7 @@ class ProductCard extends StatelessWidget {
                                   ],
                                 )
                               : Text(
-                                  "₺${productPrice.toStringAsFixed(2)}",
+                                  "₺${widget.productPrice.toStringAsFixed(2)}",
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey.shade600,
@@ -147,7 +186,7 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '$piece Adet Kaldı',
+                      '${widget.piece} Adet Kaldı',
                       style: const TextStyle(
                         fontFamily: 'BeVietnamPro',
                         fontSize: 13,
@@ -158,32 +197,76 @@ class ProductCard extends StatelessWidget {
                     GestureDetector(
                       onTap: () {
                         CartManager.addToCart(
-                            shopId,
-                            productId,
-                            productName,
-                            hasCampaign ? discountPrice! : productPrice,
-                            piece,
-                            context,
-                            isOpen);
+                          widget.shopId,
+                          widget.productId,
+                          widget.productName,
+                          hasCampaign ? discountPrice! : widget.productPrice,
+                          widget.piece,
+                          context,
+                          widget.isOpen,
+                        );
+                        _animateButton();
+
+                        // Updated custom SnackBar with better UI
+                        if (widget.isOpen) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  Icon(Icons.shopping_cart,
+                                      color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Ürün sepete eklendi!',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                              backgroundColor: Colors.green,
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 3),
+                              action: SnackBarAction(
+                                label: 'Sepete Git',
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => SepetScreen()),
+                                  );
+                                },
+                                textColor: Colors.white,
+                              ),
+                            ),
+                          );
+                        }
                       },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1D1D1D),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.add_shopping_cart,
-                          color: Colors.white,
-                        ),
+                      child: AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return Transform.rotate(
+                            angle: _rotateAnimation.value,
+                            child: ScaleTransition(
+                              scale: _scaleAnimation,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1D1D1D),
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.add_shopping_cart,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 16),
                   ],
                 ),
-
-                // Kampanya etiketi
                 if (hasCampaign)
                   Positioned(
                     top: 0,
