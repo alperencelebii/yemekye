@@ -17,27 +17,23 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController _passwordAgainController =
       TextEditingController();
   final TextEditingController _phoneNumberController = TextEditingController();
-  final TextEditingController _shopIdController =
-      TextEditingController(); // Mağaza ID'si için
+  final TextEditingController _shopIdController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final CollectionReference usersCollection =
-      FirebaseFirestore.instance.collection('sellers');
+  String _selectedRole = 'User';
 
   @override
   Widget build(BuildContext context) {
     var size = MediaQuery.of(context).size;
     return Scaffold(
       body: SingleChildScrollView(
-        // Kaydırılabilir alan
         child: Stack(
           children: [
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
                 child: Container(
-                  height: size.height *
-                      .85, // Yüksekliği biraz arttırarak sığmama sorununu çözelim
+                  height: size.height * .9,
                   width: size.width * .85,
                   decoration: BoxDecoration(
                     color: Colors.blue.withOpacity(.75),
@@ -52,175 +48,80 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(10.0),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _buildTextField(
-                              _nameController, Icons.person, 'Ad Soyad'),
-                          _buildTextField(_usernameController, Icons.person,
-                              'Kullanıcı Adı'),
-                          _buildTextField(
-                              _emailController, Icons.mail, 'E-Mail'),
-                          _buildTextField(_phoneNumberController, Icons.phone,
-                              'Telefon Numarası'),
-                          _buildTextField(
-                              _passwordController, Icons.vpn_key, 'Parola',
-                              isPassword: true),
-                          _buildTextField(_passwordAgainController,
-                              Icons.vpn_key, 'Parola Tekrar',
-                              isPassword: true),
-                          _buildShopIdField(), // Mağaza ID'si alanı
-                          SizedBox(
-                            height: size.height * 0.08,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildTextField(
+                            _nameController, Icons.person, 'Ad Soyad'),
+                        _buildTextField(
+                            _usernameController, Icons.person, 'Kullanıcı Adı'),
+                        _buildTextField(_emailController, Icons.mail, 'E-Mail'),
+                        _buildTextField(_phoneNumberController, Icons.phone,
+                            'Telefon Numarası'),
+                        _buildTextField(
+                            _passwordController, Icons.vpn_key, 'Parola',
+                            isPassword: true),
+                        _buildTextField(_passwordAgainController, Icons.vpn_key,
+                            'Parola Tekrar',
+                            isPassword: true),
+                        DropdownButtonFormField<String>(
+                          value: _selectedRole,
+                          items: ['User', 'Seller'].map((role) {
+                            return DropdownMenuItem(
+                              value: role,
+                              child: Text(role,
+                                  style: TextStyle(color: Colors.white)),
+                            );
+                          }).toList(),
+                          dropdownColor: Colors.blue,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedRole = value!;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.person, color: Colors.white),
+                            hintText: "Kullanıcı Türü",
+                            hintStyle: TextStyle(color: Colors.white),
+                            focusedBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white)),
+                            enabledBorder: UnderlineInputBorder(
+                                borderSide: BorderSide(color: Colors.white)),
                           ),
-                          InkWell(
-                            onTap: () {
-                              _registerUser();
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 5),
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(30)),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(5.0),
-                                child: Center(
-                                  child: Text(
-                                    "Kaydet",
+                        ),
+                        if (_selectedRole == 'Seller')
+                          _buildTextField(
+                              _shopIdController, Icons.store, 'Mağaza ID'),
+                        SizedBox(height: size.height * 0.08),
+                        InkWell(
+                          onTap: () => _registerUser(),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 5),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white, width: 2),
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30)),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(5.0),
+                              child: Center(
+                                child: Text("Kaydet",
                                     style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                ),
+                                        color: Colors.white, fontSize: 20)),
                               ),
                             ),
                           ),
-                          SizedBox(
-                            height: size.height * 0.05,
-                          ),
-                          // Mağaza oluşturma butonu
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CreateShopPage(),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              padding: EdgeInsets.symmetric(vertical: 5),
-                              decoration: BoxDecoration(
-                                border:
-                                    Border.all(color: Colors.white, width: 2),
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(30)),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(5.0),
-                                child: Center(
-                                  child: Text(
-                                    "Mağaza Oluştur",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 20,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-            Padding(
-              padding: EdgeInsets.only(
-                  top: size.height * .06, left: size.width * .02),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: Icon(
-                        Icons.arrow_back_ios_outlined,
-                        color: Colors.blue.withOpacity(.75),
-                        size: 26,
-                      ),
-                    ),
-                    SizedBox(
-                      width: size.width * 0.3,
-                    ),
-                    Text(
-                      "Kayıt ol",
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.blue.withOpacity(.75),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            )
           ],
         ),
       ),
     );
-  }
-
-  Widget _buildTextField(
-    TextEditingController controller,
-    IconData prefixIcon,
-    String hintText, {
-    bool isPassword = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(
-        controller: controller,
-        style: TextStyle(
-          color: Colors.white,
-        ),
-        cursorColor: Colors.white,
-        keyboardType: TextInputType.emailAddress,
-        obscureText: isPassword,
-        decoration: InputDecoration(
-          prefixIcon: Icon(
-            prefixIcon,
-            color: Colors.white,
-          ),
-          hintText: hintText,
-          prefixText: ' ',
-          hintStyle: TextStyle(color: Colors.white),
-          focusColor: Colors.white,
-          focusedBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: Colors.white,
-            ),
-          ),
-          enabledBorder: UnderlineInputBorder(
-            borderSide: BorderSide(
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShopIdField() {
-    return _buildTextField(
-        _shopIdController, Icons.store, 'Mağaza ID'); // Mağaza ID alanı
   }
 
   void _registerUser() async {
@@ -230,69 +131,104 @@ class _RegisterPageState extends State<RegisterPage> {
     String password = _passwordController.text.trim();
     String passwordAgain = _passwordAgainController.text.trim();
     String phoneNumber = _phoneNumberController.text.trim();
-    String shopId = _shopIdController.text.trim(); // Mağaza ID'si
+    String shopId = _shopIdController.text.trim();
 
     if (name.isEmpty ||
         username.isEmpty ||
         email.isEmpty ||
         password.isEmpty ||
-        passwordAgain.isEmpty ||
-        shopId.isEmpty) {
+        passwordAgain.isEmpty) {
       _showErrorMessage("Tüm alanları doldurun");
       return;
     }
-
     if (password != passwordAgain) {
       _showErrorMessage("Parolalar eşleşmiyor");
       return;
     }
+    if (_selectedRole == 'Seller' && shopId.isEmpty) {
+      _showErrorMessage("Mağaza ID gerekli");
+      return;
+    }
 
     try {
-      // Firestore'dan Mağazayı Kontrol Et
-      DocumentSnapshot shopDoc = await FirebaseFirestore.instance
-          .collection('shops')
-          .doc(shopId)
-          .get();
-      if (!shopDoc.exists) {
-        _showErrorMessage("Geçersiz Mağaza ID'si");
-        return;
+      if (_selectedRole == 'Seller') {
+        DocumentSnapshot shopDoc = await FirebaseFirestore.instance
+            .collection('shops')
+            .doc(shopId)
+            .get();
+        if (!shopDoc.exists) {
+          _showErrorMessage("Geçersiz Mağaza ID");
+          return;
+        }
       }
 
-      // Firebase Authentication ile Kullanıcıyı Kaydet
-      UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
+      String userId = userCredential.user!.uid;
 
-      // Kullanıcıyı Firestore'a Kaydet
-      await usersCollection.doc(userCredential.user!.uid).set({
+      CollectionReference collection = FirebaseFirestore.instance
+          .collection(_selectedRole == 'Seller' ? 'sellers' : 'users');
+
+      await collection.doc(userId).set({
         'name': name,
         'username': username,
         'email': email,
         'phoneNumber': phoneNumber,
-        'shopid': shopId, // Kullanıcının bağlı olduğu mağaza ID'si
+        'role': _selectedRole,
+        if (_selectedRole == 'Seller') 'shopId': shopId,
       });
 
-      // Mağaza ID'sine kullanıcının ID'sini ekle
-      await FirebaseFirestore.instance.collection('shops').doc(shopId).update({
-        'sellers': FieldValue.arrayUnion([userCredential.user!.uid]),
-      });
+      if (_selectedRole == 'Seller') {
+        await FirebaseFirestore.instance
+            .collection('shops')
+            .doc(shopId)
+            .update({
+          'sellers': FieldValue.arrayUnion([userId]),
+        });
+      }
 
-      // Başarılı kayıt sonrasında Login sayfasına yönlendirme
       Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoginPage(),
-        ),
-      );
+          context, MaterialPageRoute(builder: (context) => LoginPage()));
     } catch (e) {
-      _showErrorMessage("Kayıt sırasında bir hata oluştu: $e");
+      _showErrorMessage("Kayıt sırasında hata oluştu: $e");
     }
   }
 
   void _showErrorMessage(String message) {
-    // Hata mesajını kullanıcıya göstermek için uygun bir yöntem kullanabilirsiniz (örneğin, bir snackbar veya Toast mesajı)
-    print("Hata: $message");
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(message, style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red),
+    );
   }
+}
+
+Widget _buildTextField(
+  TextEditingController controller,
+  IconData prefixIcon,
+  String hintText, {
+  bool isPassword = false,
+}) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: TextField(
+      controller: controller,
+      style: TextStyle(color: Colors.white),
+      cursorColor: Colors.white,
+      keyboardType:
+          isPassword ? TextInputType.text : TextInputType.emailAddress,
+      obscureText: isPassword,
+      decoration: InputDecoration(
+        prefixIcon: Icon(prefixIcon, color: Colors.white),
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.white),
+        focusedBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+        enabledBorder: UnderlineInputBorder(
+          borderSide: BorderSide(color: Colors.white),
+        ),
+      ),
+    ),
+  );
 }

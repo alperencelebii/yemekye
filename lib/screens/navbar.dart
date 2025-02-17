@@ -5,6 +5,7 @@ import 'package:yemekye/map/map.dart';
 import 'package:yemekye/map/user_map.dart';
 import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
 import 'package:yemekye/screens/search.dart';
+import 'package:yemekye/qrandsepet/user/userprofile.dart';
 import 'package:yemekye/yoneticipanel/Yoneticipanel.dart';
 import 'package:yemekye/screens/homepage.dart';
 import 'package:yemekye/qrandsepet/user/sepet.dart';
@@ -23,6 +24,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'assets/icons/pie.svg',
     'assets/icons/clock.svg',
     'assets/icons/li_user.svg',
+    'assets/icons/li_user.svg',
   ];
 
   final List<String> _labels = [
@@ -30,6 +32,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     'Search',
     'Favorites',
     'History',
+    'Profile',
     'Profile',
   ];
 
@@ -39,7 +42,7 @@ class _ExpandableNavbarState extends State<ExpandableNavbar> {
     AdminPanel(),
     SepetScreen(),
     Yonetici(),
-
+    ProfilePage()
   ];
 
   @override

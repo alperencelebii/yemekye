@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:yemekye/qrandsepet/user/sepet.dart';
 import 'package:intl/intl.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final String shopId;
   final String productId;
   final String productName;
@@ -22,11 +22,50 @@ class ProductCard extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _ProductCardState createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard>
+    with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _rotateAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    // Scale animation
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    // Rotate animation
+    _rotateAnimation = Tween<double>(begin: 0, end: 0.5).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _animateButton() {
+    _controller.forward().then((_) => _controller.reverse());
+  }
+
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('campaigns')
-          .where('productid', isEqualTo: productId)
+          .where('productid', isEqualTo: widget.productId)
           .snapshots(),
       builder: (context, snapshot) {
         bool hasCampaign = false;
@@ -39,11 +78,8 @@ class ProductCard extends StatelessWidget {
           var campaignData = snapshot.data!.docs.first;
           int discountPercent = campaignData['discount'];
           discountPrice = productPrice * (1 - discountPercent / 100);
-          startTime = (campaignData['start_time'] as Timestamp).toDate();
           endTime = (campaignData['end_time'] as Timestamp).toDate();
-
-          DateTime now = DateTime.now();
-          hasCampaign = now.isAfter(startTime) && now.isBefore(endTime);
+          hasCampaign = endTime.isAfter(DateTime.now()); // Kampanya aktif mi?
 
           if (endTime.isBefore(now)) {
             FirebaseFirestore.instance
@@ -97,7 +133,7 @@ class ProductCard extends StatelessWidget {
                         children: [
                           Text(
                             productName,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               fontFamily: 'BeVietnamPro',
@@ -115,7 +151,7 @@ class ProductCard extends StatelessWidget {
                                     Row(
                                       children: [
                                         Text(
-                                          "₺${productPrice.toStringAsFixed(2)}",
+                                          "₺${widget.productPrice.toStringAsFixed(2)}",
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.grey.shade600,
@@ -144,7 +180,7 @@ class ProductCard extends StatelessWidget {
                                   ],
                                 )
                               : Text(
-                                  "₺${productPrice.toStringAsFixed(2)}",
+                                  "₺${widget.productPrice.toStringAsFixed(2)}",
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey.shade600,
@@ -154,43 +190,41 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      piece == 0 ? 'Stok Kalmadı' : '$piece Adet Kaldı',
-                      style: TextStyle(
+                      '$piece Adet Kaldı',
+                      style: const TextStyle(
                         fontFamily: 'BeVietnamPro',
                         fontSize: 13,
                         color: piece == 0 ? Colors.red : Color(0xFF353535),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    if (piece > 0)
-                      GestureDetector(
-                        onTap: () {
-                          CartManager.addToCart(
-                              shopId,
-                              productId,
-                              productName,
-                              hasCampaign ? discountPrice! : productPrice,
-                              piece,
-                              context,
-                              isOpen);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1D1D1D),
-                            borderRadius: BorderRadius.circular(50),
-                          ),
-                          width: 40,
-                          height: 40,
-                          child: const Icon(
-                            Icons.add_shopping_cart,
-                            color: Colors.white,
-                          ),
+                    GestureDetector(
+                      onTap: () {
+                        CartManager.addToCart(
+                            shopId,
+                            productId,
+                            productName,
+                            hasCampaign ? discountPrice! : productPrice,
+                            piece,
+                            context,
+                            isOpen);
+                      },
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1D1D1D),
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        width: 40,
+                        height: 40,
+                        child: const Icon(
+                          Icons.add_shopping_cart,
+                          color: Colors.white,
                         ),
                       ),
+                    ),
                     const SizedBox(width: 16),
                   ],
                 ),
-          
 
                 // Kampanya etiketi
                 if (hasCampaign)
