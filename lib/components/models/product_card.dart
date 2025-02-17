@@ -32,16 +32,20 @@ class ProductCard extends StatelessWidget {
         bool hasCampaign = false;
         double? discountPrice;
         String? campaignLabel;
+        DateTime? startTime;
         DateTime? endTime;
 
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
           var campaignData = snapshot.data!.docs.first;
           int discountPercent = campaignData['discount'];
           discountPrice = productPrice * (1 - discountPercent / 100);
+          startTime = (campaignData['start_time'] as Timestamp).toDate();
           endTime = (campaignData['end_time'] as Timestamp).toDate();
-          hasCampaign = endTime.isAfter(DateTime.now()); // Kampanya aktif mi?
 
-          if (!hasCampaign) {
+          DateTime now = DateTime.now();
+          hasCampaign = now.isAfter(startTime) && now.isBefore(endTime);
+
+          if (endTime.isBefore(now)) {
             FirebaseFirestore.instance
                 .collection('campaigns')
                 .doc(campaignData.id)
@@ -93,11 +97,14 @@ class ProductCard extends StatelessWidget {
                         children: [
                           Text(
                             productName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               fontFamily: 'BeVietnamPro',
-                              color: Color(0xFF353535),
+                              color: piece == 0 ? Colors.red : Color(0xFF353535),
+                              decoration: piece == 0
+                                  ? TextDecoration.lineThrough
+                                  : TextDecoration.none,
                             ),
                           ),
                           const SizedBox(height: 4),
@@ -147,41 +154,43 @@ class ProductCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '$piece Adet Kaldı',
-                      style: const TextStyle(
+                      piece == 0 ? 'Stok Kalmadı' : '$piece Adet Kaldı',
+                      style: TextStyle(
                         fontFamily: 'BeVietnamPro',
                         fontSize: 13,
-                        color: Color(0xFF353535),
+                        color: piece == 0 ? Colors.red : Color(0xFF353535),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        CartManager.addToCart(
-                            shopId,
-                            productId,
-                            productName,
-                            hasCampaign ? discountPrice! : productPrice,
-                            piece,
-                            context,
-                            isOpen);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1D1D1D),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.add_shopping_cart,
-                          color: Colors.white,
+                    if (piece > 0)
+                      GestureDetector(
+                        onTap: () {
+                          CartManager.addToCart(
+                              shopId,
+                              productId,
+                              productName,
+                              hasCampaign ? discountPrice! : productPrice,
+                              piece,
+                              context,
+                              isOpen);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1D1D1D),
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          width: 40,
+                          height: 40,
+                          child: const Icon(
+                            Icons.add_shopping_cart,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(width: 16),
                   ],
                 ),
+          
 
                 // Kampanya etiketi
                 if (hasCampaign)

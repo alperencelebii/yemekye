@@ -4,6 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:yemekye/loginregister/shop_register.dart';
 import 'package:yemekye/yoneticipanel/AddUsers.dart';
+import 'package:yemekye/yoneticipanel/Addcategory.dart';
 import 'package:yemekye/yoneticipanel/reports/reportlistpage.dart';
 
 class Yonetici extends StatefulWidget {
@@ -37,6 +38,15 @@ class _YoneticiState extends State<Yonetici> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ReportListPage()),
+              );
+            },
+          ),
+           IconButton(
+            icon: Icon(Icons.bubble_chart),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddCategory()),
               );
             },
           ),
@@ -288,6 +298,7 @@ class ShopDetailsPage extends StatelessWidget {
               );
             },
           ),
+          
         ],
       ),
       body: FutureBuilder<DocumentSnapshot>(
