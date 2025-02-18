@@ -171,7 +171,7 @@ class _AddProductState extends State<AddProduct> {
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-      ),
-    );
-  }
+     ),
+);
+}
 }

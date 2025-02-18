@@ -23,11 +23,17 @@ class MyProducts extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ürünlerim"),
-        backgroundColor: Colors.orange,
+        title: const Text(
+          "Ürünlerim",
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 255, 170, 86),
         actions: [
           IconButton(
-            icon: const Icon(Icons.local_offer), // Kampanya ikonu
+            icon: const Icon(Icons.local_offer),
             tooltip: "Kampanyalar",
             onPressed: () {
               Navigator.push(
@@ -51,7 +57,6 @@ class MyProducts extends StatelessWidget {
 
           String shopId = shopIdSnapshot.data!;
 
-          // Belirli bir mağazanın ürünlerini çekiyoruz
           return StreamBuilder(
             stream: _firestore
                 .collection('shopproduct')
@@ -65,13 +70,12 @@ class MyProducts extends StatelessWidget {
               List<DocumentSnapshot> shopProducts = snapshot.data!.docs;
 
               if (shopProducts.isEmpty) {
-                return const Center(
-                    child: Text("Mağazanıza ait ürün bulunamadı."));
+                return const Center(child: Text("Mağazanıza ait ürün bulunamadı."));
               }
 
               return ListView.builder(
                 itemCount: shopProducts.length,
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                 itemBuilder: (context, index) {
                   String productId = shopProducts[index]['productid'];
 
@@ -93,75 +97,78 @@ class MyProducts extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
 
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                            vertical: 8.0, horizontal: 10.0),
-                        padding: const EdgeInsets.all(12.0),
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(vertical: 12.0),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(12.0),
+                          borderRadius: BorderRadius.circular(20.0),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.grey.withOpacity(0.3),
-                              spreadRadius: 3,
-                              blurRadius: 5,
-                              offset: const Offset(0, 3),
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 2,
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
                             ),
                           ],
                         ),
-                        child: Row(
-                          children: [
-                            // Ürün Resmi Placeholder
-                            Container(
-                              width: 80,
-                              height: 80,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8.0),
-                                color: Colors.grey[200],
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Row(
+                            children: [
+                              // Ürün Resmi Placeholder
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(16.0),
+                                  color: Colors.grey[300],
+                                ),
+                                child: const Icon(
+                                  Icons.image,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
                               ),
-                              child: const Icon(
-                                Icons.image,
-                                size: 40,
-                                color: Colors.grey,
-                              ),
-                            ),
-                            const SizedBox(width: 16.0),
+                              const SizedBox(width: 16.0),
 
-                            // Ürün Detayları
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    productDoc['name'],
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
+                              // Ürün Detayları
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      productDoc['name'],
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8.0),
-                                  Text(
-                                    "Kategori: ${productDoc['category']}",
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey,
+                                    const SizedBox(height: 8.0),
+                                    Text(
+                                      "Kategori: ${productDoc['category']}",
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
 
-                            // Düzenle Butonu
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Colors.orange,
+                              // Düzenle Butonu
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: () {
+                                  // Ürün düzenleme mantığı buraya eklenebilir
+                                },
                               ),
-                              onPressed: () {
-                                // Ürün düzenleme mantığı buraya eklenebilir
-                              },
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       );
                     },
