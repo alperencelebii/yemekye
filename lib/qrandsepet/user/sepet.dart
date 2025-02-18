@@ -1,7 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:yemekye/qrandsepet/user/coupen.dart';
 
 class CartManager {
   static final List<Map<String, dynamic>> _cartItems = [];
@@ -230,13 +230,40 @@ class _SepetScreenState extends State<SepetScreen> {
         orderNumber = (querySnapshot.docs.first.data()['orderNumber'] ?? 0) + 1;
       }
 
-      // Yeni sepet belgesini oluştur
+      final user = FirebaseAuth.instance.currentUser;
+      final userId = user?.uid;
+
       final cartDoc = await firestore.collection('carts').add({
         'createdAt': FieldValue.serverTimestamp(),
         'products': CartManager.cartItems,
         'shopId': CartManager._shopId,
-        'orderNumber': orderNumber, // Sipariş numarası
+        'orderNumber': orderNumber,
         'status': 'Bekleniyor',
+        if (userId != null) 'userId': userId,
+      });
+
+      if (userId != null) {
+        await firestore
+            .collection('users')
+            .doc(userId)
+            .collection('orders')
+            .doc(cartDoc.id)
+            .set({
+          'cartId': cartDoc.id,
+          'createdAt': FieldValue.serverTimestamp(),
+          'shopId': CartManager._shopId,
+          'orderNumber': orderNumber,
+          'status': 'Bekleniyor',
+        });
+      }
+
+      await firestore.collection('orders').add({
+        'userId': FirebaseAuth.instance.currentUser?.uid,
+        'shopId': CartManager._shopId,
+        'products': CartManager.cartItems,
+        'orderNumber': orderNumber,
+        'status': 'Onay Bekleniyor',
+        'createdAt': FieldValue.serverTimestamp(),
       });
 
       final qrString =
@@ -281,15 +308,6 @@ class _SepetScreenState extends State<SepetScreen> {
                           style: const TextStyle(color: Colors.black87),
                         ),
                         const SizedBox(height: 10),
-                        CouponChecker(
-                          onDiscountApplied: (discountAmount) {
-                            setState(() {
-                              _discount =
-                                  discountAmount; // Kupondan gelen indirimi uygula
-                            });
-                          },
-                        ),
-
                         Text(
                           "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}",
                           style: TextStyle(
@@ -351,87 +369,6 @@ class _SepetScreenState extends State<SepetScreen> {
       );
     } catch (e) {
       showSnackbar(context, "Sipariş oluşturulamadı: $e");
-    }
-  }
-
-  void applyCoupon() async {
-    final couponCode = _couponController.text.trim(); // Kupon kodunu al
-
-    try {
-      // Firestore'dan kupon kodunu al
-      DocumentSnapshot snapshot = await FirebaseFirestore.instance
-          .collection('coupons')
-          .doc(couponCode) // Kupon kodu ile belgeyi bul
-          .get();
-
-      if (snapshot.exists) {
-        // Eğer kupon kodu mevcutsa
-        var couponData = snapshot.data() as Map<String, dynamic>;
-
-        // Geçerlilik tarihlerini kontrol et
-        Timestamp startDate = couponData['startDate'];
-        Timestamp endDate = couponData['endDate'];
-        int usageLimit = couponData['usageLimit'];
-        int usedCount = couponData['usedCount'];
-
-        DateTime currentDate = DateTime.now();
-
-        if (currentDate.isBefore(startDate.toDate())) {
-          // Başlangıç tarihi geçmişse
-          showSnackbar(context, "Bu kupon henüz geçerli değil!");
-        } else if (currentDate.isAfter(endDate.toDate())) {
-          // Bitiş tarihi geçmişse
-          showSnackbar(context, "Bu kuponun süresi dolmuş!");
-        } else if (usedCount >= usageLimit) {
-          // Kullanım limiti dolmuşsa
-          showSnackbar(context, "Bu kuponun kullanım limiti dolmuş!");
-        } else {
-          // Kupon geçerli, indirim oranını uygula
-          double discount = 0.0;
-
-          // İndirim türüne göre hesaplama
-          if (couponData['discountType'] == 'percentage') {
-            // Yüzde indirim
-            double discountPercentage = couponData['discount'];
-            setState(() {
-              // Toplam tutarın yüzdesi kadar bir indirim uygula
-              discount = calculateTotalPrice() * (discountPercentage / 100);
-            });
-          } else {
-            // Sabit indirim
-            setState(() {
-              discount = couponData['discount'];
-            });
-          }
-
-          // İndirim miktarını kaydet
-          setState(() {
-            _discount = discount; // İndirim oranını güncelle
-          });
-
-          // Kullanım sayısını güncelle
-          await FirebaseFirestore.instance
-              .collection('coupons')
-              .doc(couponCode)
-              .update({
-            'usedCount': FieldValue.increment(1), // Kullanım sayısını 1 arttır
-          });
-
-          showSnackbar(context, "Kupon başarıyla uygulandı!"); // Başarılı uyarı
-        }
-      } else {
-        setState(() {
-          _discount = 0.0; // Geçersiz kupon kodu
-        });
-
-        showSnackbar(context, "Geçersiz kupon kodu!"); // Hata uyarısı
-      }
-    } catch (e) {
-      setState(() {
-        _discount = 0.0; // Hata durumunda indirimi sıfırla
-      });
-
-      showSnackbar(context, "Bir hata oluştu!"); // Hata mesajı
     }
   }
 
@@ -636,53 +573,22 @@ class _SepetScreenState extends State<SepetScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Kupon Kodu Giriş Alanı
-                TextField(
-                  controller: _couponController, // TextField controller'ı
-                  decoration: InputDecoration(
-                    labelText: "Kupon Kodu", // Etiket
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green, // Buton rengi
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
-                  ),
-                  onPressed: () {
-                    // Burada kuponu uygula fonksiyonunu çağırıyoruz
-                    applyCoupon();
-                  },
-                  child: const Text('Kuponu Uygula',
-                      style: TextStyle(color: Colors.white)),
-                ),
-                const SizedBox(height: 10),
-
-                // Toplam Fiyat
                 Text(
-                  "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}", // İndirimli toplam fiyat
-                  style: TextStyle(
+                  "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}",
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: _discount > 0
-                        ? Colors.green
-                        : Color(0xFFF9A602), // İndirim varsa yeşil, yoksa sarı
+                    color: Color(0xFFF9A602),
                   ),
                 ),
                 const SizedBox(height: 10),
-
-                // QR Kod Butonu
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF9A602),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 20, vertical: 12),
                   ),
-                  onPressed: generateQRCode, // QR kodu oluştur
+                  onPressed: generateQRCode,
                   child: const Text('QR Kod Oluştur',
                       style: TextStyle(color: Colors.black87)),
                 ),
