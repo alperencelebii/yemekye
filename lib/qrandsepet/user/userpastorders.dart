@@ -99,9 +99,9 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-                elevation: 5,
+                elevation: 10,  // Daha fazla gölge ekledim
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
+                  borderRadius: BorderRadius.circular(20), // Yuvarlak kenarlar
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -111,43 +111,44 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                       Text(
                         'Sipariş No: $orderNumber',
                         style: const TextStyle(
-                          fontSize: 18,
+                          fontSize: 20,  // Daha büyük başlık
                           fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.store,
-                              size: 18, color: Colors.blueGrey),
-                          const SizedBox(width: 5),
+                              size: 20, color: Colors.blueGrey),
+                          const SizedBox(width: 10),
                           Text(shopName, style: const TextStyle(fontSize: 16)),
                         ],
                       ),
                       Row(
                         children: [
                           const Icon(Icons.location_on,
-                              size: 18, color: Colors.redAccent),
-                          const SizedBox(width: 5),
+                              size: 20, color: Colors.redAccent),
+                          const SizedBox(width: 10),
                           Text(shopAddress,
                               style: const TextStyle(fontSize: 14)),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           const Icon(Icons.date_range,
-                              size: 18, color: Colors.green),
-                          const SizedBox(width: 5),
+                              size: 20, color: Colors.green),
+                          const SizedBox(width: 10),
                           Text(DateFormat('dd MMM yyyy, HH:mm')
                               .format(updatedAt)),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Text(
                         'Toplam: ₺${totalPrice.toStringAsFixed(2)}',
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.blueAccent,
                         ),
@@ -163,8 +164,8 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                           child: Row(
                             children: [
                               const Icon(Icons.shopping_bag,
-                                  size: 18, color: Colors.grey),
-                              const SizedBox(width: 5),
+                                  size: 20, color: Colors.grey),
+                              const SizedBox(width: 10),
                               Text(
                                 '${product['name']} x${product['quantity']}',
                                 style: const TextStyle(fontSize: 14),

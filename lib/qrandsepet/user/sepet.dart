@@ -209,8 +209,7 @@ class _SepetScreenState extends State<SepetScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-
-Future<void> generateQRCode() async {
+  Future<void> generateQRCode() async {
     if (CartManager._shopId == null || CartManager.cartItems.isEmpty) {
       showSnackbar(context, "Sepet boş!");
       return;
@@ -260,16 +259,6 @@ Future<void> generateQRCode() async {
 
       await firestore.collection('orders').add({
         'userId': FirebaseAuth.instance.currentUser?.uid,
-        'shopId': CartManager._shopId,
-        'products': CartManager.cartItems,
-        'orderNumber': orderNumber,
-        'status': 'Onay Bekleniyor',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      // Siparişi geçmiş siparişler koleksiyonuna da kaydedelim
-      await firestore.collection('orders').add({
-        'userId': FirebaseAuth.instance.currentUser?.uid,  // Kullanıcı ID'si
         'shopId': CartManager._shopId,
         'products': CartManager.cartItems,
         'orderNumber': orderNumber,
@@ -383,10 +372,6 @@ Future<void> generateQRCode() async {
     }
   }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> c42d051fe35a94d69df7f781a5b51a33046bc926
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -584,34 +569,6 @@ Future<void> generateQRCode() async {
               },
             ),
           ),
-<<<<<<< HEAD
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        "Toplam: \u20ba${calculateTotalPrice().toStringAsFixed(2)}",
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFF9A602),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF9A602),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                        ),
-                        onPressed: generateQRCode,
-                        child: const Text('QR Kod Oluştur',
-                            style: TextStyle(color: Colors.black87)),
-                      ),
-                    ],
-                  ),
-                ),
-=======
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -638,7 +595,6 @@ Future<void> generateQRCode() async {
               ],
             ),
           ),
->>>>>>> c42d051fe35a94d69df7f781a5b51a33046bc926
         ],
       ),
     );
