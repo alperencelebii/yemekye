@@ -6,6 +6,7 @@ import 'package:yemekye/adminpanel/addproduct.dart';
 import 'package:yemekye/adminpanel/campainpage.dart';
 import 'package:yemekye/adminpanel/kampanya/pastcampainpage.dart';
 import 'package:yemekye/adminpanel/myProducts.dart';
+import 'package:yemekye/adminpanel/satisanalis.dart';
 import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
 import 'package:yemekye/adminpanel/pastOrders.dart';
 import 'shopsettings.dart';
@@ -300,6 +301,17 @@ class _AdminPanelState extends State<AdminPanel> {
               MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
             ),
           ),
+ListTile(
+  leading: Icon(Icons.analytics),
+  title: Text("Satış Analizi"),
+  onTap: () => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => HourlyOrdersScreen(), // shopId'yi göndermeye gerek yok!
+    ),
+  ),
+),
+
         ],
       ),
     );

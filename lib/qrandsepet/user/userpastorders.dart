@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class UserPastOrdersScreen extends StatefulWidget {
   @override
@@ -10,34 +11,31 @@ class UserPastOrdersScreen extends StatefulWidget {
 class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// 🔹 Kullanıcının geçmiş siparişlerini Firestore'dan getir
   Future<List<Map<String, dynamic>>> _fetchUserOrders() async {
     try {
       final firestore = FirebaseFirestore.instance;
       final user = _auth.currentUser;
       if (user == null) return [];
 
-      // Kullanıcının yaptığı siparişleri getir (onaylanmış siparişler)
       final querySnapshot = await firestore
           .collection('carts')
           .where('userId', isEqualTo: user.uid)
           .where('status', isEqualTo: 'Onaylandı')
           .get();
 
-      // Siparişlere bağlı mağaza bilgilerini almak için işlemi genişletelim
       List<Map<String, dynamic>> orders = [];
       for (var doc in querySnapshot.docs) {
         final data = doc.data();
         final shopId = data['shopId'] ?? '';
 
-        // Mağaza bilgilerini getir
         final shopDoc = await firestore.collection('shops').doc(shopId).get();
         final shopName = shopDoc.exists ? shopDoc['name'] : 'Bilinmeyen Mağaza';
+        final shopAddress =
+            shopDoc.exists ? shopDoc['address'] : 'Bilinmeyen Mağaza';
 
         final products =
             List<Map<String, dynamic>>.from(data['products'] ?? []);
 
-        // Toplam fiyat hesapla
         final totalPrice = products.fold(0.0, (sum, product) {
           final price = product['price'] ?? 0.0;
           final quantity = product['quantity'] ?? 0;
@@ -51,6 +49,7 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
           'totalPrice': totalPrice,
           'updatedAt': (data['updatedAt'] as Timestamp).toDate(),
           'shopName': shopName,
+          'shopAddress': shopAddress,
         });
       }
 
@@ -64,8 +63,9 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Geçmiş Siparişlerim'),
-        backgroundColor: const Color(0xFF007BFF),
+        title: const Text('Geçmiş Siparişlerim',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -92,43 +92,84 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
               final order = orders[index];
               final orderNumber = order['orderNumber'];
               final shopName = order['shopName'];
+              final shopAddress = order['shopAddress'];
               final products = order['products'] as List<Map<String, dynamic>>;
               final totalPrice = order['totalPrice'] as double;
               final updatedAt = order['updatedAt'] as DateTime;
 
               return Card(
-                margin: const EdgeInsets.symmetric(vertical: 8),
-                elevation: 4,
+                margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
+                elevation: 5,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sipariş Numarası: $orderNumber',
+                        'Sipariş No: $orderNumber',
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      Text('Mağaza: $shopName',
-                          style: const TextStyle(fontSize: 16)),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.store,
+                              size: 18, color: Colors.blueGrey),
+                          const SizedBox(width: 5),
+                          Text(shopName, style: const TextStyle(fontSize: 16)),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on,
+                              size: 18, color: Colors.redAccent),
+                          const SizedBox(width: 5),
+                          Text(shopAddress,
+                              style: const TextStyle(fontSize: 14)),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.date_range,
+                              size: 18, color: Colors.green),
+                          const SizedBox(width: 5),
+                          Text(DateFormat('dd MMM yyyy, HH:mm')
+                              .format(updatedAt)),
+                        ],
+                      ),
                       const SizedBox(height: 8),
-                      Text('Toplam: ₺${totalPrice.toStringAsFixed(2)}'),
-                      Text('Tarih: ${updatedAt.toLocal()}'),
+                      Text(
+                        'Toplam: ₺${totalPrice.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueAccent,
+                        ),
+                      ),
                       const Divider(height: 20, thickness: 1),
                       const Text('Ürünler:',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 6),
                       ...products.map((product) {
                         return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 2),
-                          child: Text(
-                            '- ${product['name']} x${product['quantity']}',
-                            style: const TextStyle(fontSize: 14),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.shopping_bag,
+                                  size: 18, color: Colors.grey),
+                              const SizedBox(width: 5),
+                              Text(
+                                '${product['name']} x${product['quantity']}',
+                                style: const TextStyle(fontSize: 14),
+                              ),
+                            ],
                           ),
                         );
                       }).toList(),
