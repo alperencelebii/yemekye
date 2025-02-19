@@ -77,25 +77,28 @@ class MyProducts extends StatelessWidget {
                 itemCount: shopProducts.length,
                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                 itemBuilder: (context, index) {
-                  String productId = shopProducts[index]['productid'];
+  var shopProductData = shopProducts[index].data() as Map<String, dynamic>;
+
+  // Eğer productid alanı yoksa, hata almamak için listeye eklemeyelim
+  if (!shopProductData.containsKey('productid')) {
+    return const SizedBox.shrink(); // Boş bir widget döndür
+  }
+
+  String productId = shopProductData['productid'];
+
 
                   return FutureBuilder(
-                    future:
-                        _firestore.collection('products').doc(productId).get(),
-                    builder: (context,
-                        AsyncSnapshot<DocumentSnapshot> productSnapshot) {
-                      if (!productSnapshot.hasData) {
-                        return const Center(
-                            child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: CircularProgressIndicator(),
-                        ));
+                    future: _firestore.collection('products').doc(productId).get(),
+                    builder: (context, AsyncSnapshot<DocumentSnapshot> productSnapshot) {
+                      if (productSnapshot.connectionState == ConnectionState.waiting) {
+                        return const SizedBox.shrink();
+                      }
+                      
+                      if (!productSnapshot.hasData || !productSnapshot.data!.exists) {
+                        return const SizedBox.shrink(); // Ürün silinmişse göstermiyoruz
                       }
 
                       DocumentSnapshot productDoc = productSnapshot.data!;
-                      if (!productDoc.exists) {
-                        return const SizedBox.shrink();
-                      }
 
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
@@ -116,7 +119,6 @@ class MyProducts extends StatelessWidget {
                           padding: const EdgeInsets.all(16.0),
                           child: Row(
                             children: [
-                              // Ürün Resmi Placeholder
                               Container(
                                 width: 80,
                                 height: 80,
@@ -131,8 +133,6 @@ class MyProducts extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 16.0),
-
-                              // Ürün Detayları
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -156,8 +156,6 @@ class MyProducts extends StatelessWidget {
                                   ],
                                 ),
                               ),
-
-                              // Düzenle Butonu
                               IconButton(
                                 icon: const Icon(
                                   Icons.edit,

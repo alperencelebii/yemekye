@@ -42,6 +42,15 @@ class _YoneticiState extends State<Yonetici> {
               );
             },
           ),
+          IconButton(
+            icon: Icon(Icons.report),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CategoryProductPage()),
+              );
+            },
+          ),
         ],
       ),
       body: Column(

@@ -10,35 +10,59 @@ class AddProduct extends StatefulWidget {
 }
 
 class _AddProductState extends State<AddProduct> {
-  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _pieceController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _discountPriceController =
-      TextEditingController();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  void _addProduct() async {
-    String name = _nameController.text.trim();
-    String piece = _pieceController.text.trim();
-    String category = _categoryController.text.trim();
-    String price = _priceController.text.trim();
-    String discountPrice = _discountPriceController.text.trim();
+  String? selectedCategory;
+  String? selectedProduct;
+  List<String> categories = [];
+  List<String> products = [];
 
-    if (name.isEmpty ||
-        piece.isEmpty ||
-        category.isEmpty ||
-        price.isEmpty ||
-        discountPrice.isEmpty) {
-      _showErrorMessage("Lütfen tüm alanları doldurun");
+  @override
+  void initState() {
+    super.initState();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    QuerySnapshot categorySnapshot = await _firestore.collection('category_products').get();
+    setState(() {
+      categories = categorySnapshot.docs.map((doc) => doc['category'] as String).toSet().toList();
+    });
+  }
+
+  Future<void> _loadProducts(String category) async {
+    QuerySnapshot productSnapshot = await _firestore
+        .collection('category_products')
+        .where('category', isEqualTo: category)
+        .get();
+
+    setState(() {
+      products = productSnapshot.docs.map((doc) => doc['name'] as String).toList();
+      selectedProduct = null;
+    });
+  }
+
+  void _addProduct() async {
+    if (selectedCategory == null || selectedProduct == null) {
+      _showErrorMessage("Lütfen kategori ve ürün seçin");
+      return;
+    }
+
+    String piece = _pieceController.text.trim();
+    String price = _priceController.text.trim();
+
+
+    if (piece.isEmpty || price.isEmpty) {
+      _showErrorMessage("Lütfen adet ve fiyat girin");
       return;
     }
 
     try {
       User? currentUser = _auth.currentUser;
-
       if (currentUser == null) {
         _showErrorMessage("Kullanıcı oturum açmamış");
         return;
@@ -54,24 +78,20 @@ class _AddProductState extends State<AddProduct> {
 
       String shopId = userDoc['shopid'];
 
-      DocumentReference productRef =
-          await _firestore.collection('products').add({
-        'name': name,
+      DocumentReference productRef = await _firestore.collection('products').add({
+        'name': selectedProduct,
+        'category': selectedCategory,
         'piece': int.tryParse(piece) ?? 0,
-        'category': category,
         'price': double.tryParse(price) ?? 0.0,
-        'discountprice': double.tryParse(discountPrice) ?? 0.0,
       });
-
-      String productId = productRef.id;
 
       await _firestore.collection('shopproduct').add({
         'shopid': shopId,
-        'productid': productId,
+        'productid': productRef.id,
       });
 
       await _firestore.collection('shops').doc(shopId).update({
-        'productid': FieldValue.arrayUnion([productId]),
+        'productid': FieldValue.arrayUnion([productRef.id]),
       });
 
       _showSuccessMessage("Ürün başarıyla eklendi!");
@@ -82,13 +102,11 @@ class _AddProductState extends State<AddProduct> {
   }
 
   void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -102,8 +120,7 @@ class _AddProductState extends State<AddProduct> {
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 4,
             child: Padding(
               padding: const EdgeInsets.all(20.0),
@@ -119,14 +136,57 @@ class _AddProductState extends State<AddProduct> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _buildTextField("Ürün Adı", _nameController),
-                  _buildTextField("Adet", _pieceController,
-                      keyboardType: TextInputType.number),
-                  _buildTextField("Kategori", _categoryController),
-                  _buildTextField("Fiyat", _priceController,
-                      keyboardType: TextInputType.number),
-                  _buildTextField("İndirimli Fiyat", _discountPriceController,
-                      keyboardType: TextInputType.number),
+
+                  DropdownButtonFormField<String>(
+                    value: selectedCategory,
+                    hint: const Text("Kategori Seçin"),
+                    items: categories
+                        .map((category) => DropdownMenuItem(
+                              value: category,
+                              child: Text(category),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCategory = value;
+                        selectedProduct = null;
+                        products = [];
+                      });
+                      _loadProducts(value!);
+                    },
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  DropdownButtonFormField<String>(
+                    value: selectedProduct,
+                    hint: const Text("Ürün Seçin"),
+                    items: products
+                        .map((product) => DropdownMenuItem(
+                              value: product,
+                              child: Text(product),
+                            ))
+                        .toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedProduct = value;
+                      });
+                    },
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  _buildTextField("Adet", _pieceController, keyboardType: TextInputType.number),
+                  _buildTextField("Fiyat", _priceController, keyboardType: TextInputType.number),
+
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
@@ -134,8 +194,7 @@ class _AddProductState extends State<AddProduct> {
                       onPressed: _addProduct,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF9A602),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: const Text(
@@ -153,8 +212,7 @@ class _AddProductState extends State<AddProduct> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller,
-      {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(String label, TextEditingController controller, {TextInputType keyboardType = TextInputType.text}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextField(
@@ -162,16 +220,11 @@ class _AddProductState extends State<AddProduct> {
         keyboardType: keyboardType,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Color(0xFFF9A602)),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Color(0xFFF9A602), width: 2),
-            borderRadius: BorderRadius.circular(12),
-          ),
         ),
-     ),
-);
-}
+      ),
+    );
+  }
 }

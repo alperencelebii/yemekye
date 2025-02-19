@@ -356,10 +356,11 @@ Future<void> _moveExpiredCampaigns() async {
                 return Center(child: Text("Mağazanıza ait ürün bulunamadı."));
               }
 
-              // Sadece bu mağazaya ait ürünlerin productid'lerini al
-              List<String> productIds =
-                  shopProducts.map((doc) => doc['productid'] as String).toList();
-
+  // Eksik productid alanı olan belgeleri filtreleyelim
+  List<String> productIds = shopProducts
+      .where((doc) => doc.data() != null && (doc.data() as Map<String, dynamic>).containsKey('productid'))
+      .map((doc) => doc['productid'] as String)
+      .toList();
               return StreamBuilder(
                 stream: _firestore
                     .collection('products')
