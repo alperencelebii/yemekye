@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart';
 
 class UserPastOrdersScreen extends StatefulWidget {
   @override
@@ -10,6 +9,16 @@ class UserPastOrdersScreen extends StatefulWidget {
 
 class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Slider değerleri
+  double hygieneRating = 1.0; 
+  double freshnessRating = 1.0; 
+  double serviceQualityRating = 1.0;
+
+  // Ortalama puan hesaplamak için bir fonksiyon
+  double get averageRating {
+    return (hygieneRating + freshnessRating + serviceQualityRating) / 3;
+  }
 
   Future<List<Map<String, dynamic>>> _fetchUserOrders() async {
     try {
@@ -30,8 +39,6 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
 
         final shopDoc = await firestore.collection('shops').doc(shopId).get();
         final shopName = shopDoc.exists ? shopDoc['name'] : 'Bilinmeyen Mağaza';
-        final shopAddress =
-            shopDoc.exists ? shopDoc['address'] : 'Bilinmeyen Mağaza';
 
         final products =
             List<Map<String, dynamic>>.from(data['products'] ?? []);
@@ -47,15 +54,42 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
           'orderNumber': data['orderNumber'] ?? 'N/A',
           'products': products,
           'totalPrice': totalPrice,
-          'updatedAt': (data['updatedAt'] as Timestamp).toDate(),
           'shopName': shopName,
-          'shopAddress': shopAddress,
+          'shopId': shopId, 
         });
       }
 
       return orders;
     } catch (e) {
       throw Exception('Siparişleri yüklerken hata oluştu: $e');
+    }
+  }
+
+  // Puanları Firebase'e kaydet
+  Future<void> _submitRatings(String shopId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+
+      // Ortalama puanı hesaplayalım
+      double average = averageRating;
+
+      // Firebase'de shop'a ortalama puanı kaydedelim
+await firestore.collection('shops').doc(shopId).update({
+  'averageRating': average.toDouble(), // double olarak kaydediyoruz
+  'hygieneRating': hygieneRating.toDouble(),
+  'freshnessRating': freshnessRating.toDouble(),
+  'serviceQualityRating': serviceQualityRating.toDouble(),
+});
+
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Puanlar başarıyla kaydedildi!')),
+      );
+    } catch (e) {
+      print('Puan kaydetme hatası: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Puan kaydedilirken hata oluştu!')),
+      );
     }
   }
 
@@ -90,18 +124,14 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
             padding: const EdgeInsets.all(10),
             itemBuilder: (context, index) {
               final order = orders[index];
-              final orderNumber = order['orderNumber'];
+              final shopId = order['shopId'];
               final shopName = order['shopName'];
-              final shopAddress = order['shopAddress'];
-              final products = order['products'] as List<Map<String, dynamic>>;
-              final totalPrice = order['totalPrice'] as double;
-              final updatedAt = order['updatedAt'] as DateTime;
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
-                elevation: 10,  // Daha fazla gölge ekledim
+                elevation: 10,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20), // Yuvarlak kenarlar
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -109,71 +139,75 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Sipariş No: $orderNumber',
+                        'Sipariş No: ${order['orderNumber']}',
                         style: const TextStyle(
-                          fontSize: 20,  // Daha büyük başlık
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.blueAccent,
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.store,
-                              size: 20, color: Colors.blueGrey),
-                          const SizedBox(width: 10),
-                          Text(shopName, style: const TextStyle(fontSize: 16)),
-                        ],
+                      Text(shopName, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(height: 10),
+                      // Hijyen puanı
+                      Text('Hijyen:'),
+                      Slider(
+                        value: hygieneRating,
+                        min: 1.0,
+                        max: 5.0,
+                        divisions: 4,
+                        label: hygieneRating.toStringAsFixed(1),
+                        onChanged: (value) {
+                          setState(() {
+                            hygieneRating = value;
+                          });
+                        },
                       ),
-                      Row(
-                        children: [
-                          const Icon(Icons.location_on,
-                              size: 20, color: Colors.redAccent),
-                          const SizedBox(width: 10),
-                          Text(shopAddress,
-                              style: const TextStyle(fontSize: 14)),
-                        ],
+                      // Tazelik puanı
+                      Text('Tazelik:'),
+                      Slider(
+                        value: freshnessRating,
+                        min: 1.0,
+                        max: 5.0,
+                        divisions: 4,
+                        label: freshnessRating.toStringAsFixed(1),
+                        onChanged: (value) {
+                          setState(() {
+                            freshnessRating = value;
+                          });
+                        },
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(Icons.date_range,
-                              size: 20, color: Colors.green),
-                          const SizedBox(width: 10),
-                          Text(DateFormat('dd MMM yyyy, HH:mm')
-                              .format(updatedAt)),
-                        ],
+                      // Hizmet kalitesi puanı
+                      Text('Hizmet Kalitesi:'),
+                      Slider(
+                        value: serviceQualityRating,
+                        min: 1.0,
+                        max: 5.0,
+                        divisions: 4,
+                        label: serviceQualityRating.toStringAsFixed(1),
+                        onChanged: (value) {
+                          setState(() {
+                            serviceQualityRating = value;
+                          });
+                        },
                       ),
                       const SizedBox(height: 10),
+                      // Ortalama puanı göster
                       Text(
-                        'Toplam: ₺${totalPrice.toStringAsFixed(2)}',
+                        'Ortalama Puan: ${averageRating.toStringAsFixed(2)}',  // Ondalık sayı gösteriyoruz
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blueAccent,
+                          color: Colors.green,
                         ),
                       ),
-                      const Divider(height: 20, thickness: 1),
-                      const Text('Ürünler:',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 6),
-                      ...products.map((product) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.shopping_bag,
-                                  size: 20, color: Colors.grey),
-                              const SizedBox(width: 10),
-                              Text(
-                                '${product['name']} x${product['quantity']}',
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () {
+                          _submitRatings(shopId);
+                        },
+                        child: const Text('Puanları Kaydet'),
+                      ),
                     ],
                   ),
                 ),
