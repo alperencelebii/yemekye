@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class AddCouponPage extends StatefulWidget {
@@ -17,6 +21,8 @@ class _AddCouponPageState extends State<AddCouponPage> {
   DateTime? _startDate;
   DateTime? _endDate;
   String _discountType = 'percentage';
+  File? _selectedImage;
+  String? _imageUrl;
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? selectedDate = await showDatePicker(
@@ -38,6 +44,80 @@ class _AddCouponPageState extends State<AddCouponPage> {
               DateFormat('yyyy-MM-dd').format(selectedDate);
         }
       });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadImage(File imageFile) async {
+    try {
+      final fileName = 'coupons/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      final storageRef = FirebaseStorage.instance.ref().child(fileName);
+      final uploadTask = await storageRef.putFile(imageFile);
+      return await uploadTask.ref.getDownloadURL();
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _addCoupon() async {
+    final couponCode = _couponCodeController.text.trim();
+    final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
+    final usageLimit = int.tryParse(_usageLimitController.text.trim()) ?? 0;
+
+    if (couponCode.isEmpty ||
+        discount <= 0 ||
+        usageLimit <= 0 ||
+        _startDate == null ||
+        _endDate == null ||
+        _selectedImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lütfen tüm alanları doldurun ve resim ekleyin.')),
+      );
+      return;
+    }
+
+    String? imageUrl = await _uploadImage(_selectedImage!);
+
+    if (imageUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Resim yüklenirken hata oluştu.')),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('coupons')
+          .doc(couponCode)
+          .set({
+        'couponCode': couponCode,
+        'discount': discount,
+        'discountType': _discountType,
+        'startDate': Timestamp.fromDate(_startDate!),
+        'endDate': Timestamp.fromDate(_endDate!),
+        'usageLimit': usageLimit,
+        'usedCount': 0,
+        'imageUrl': imageUrl,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kupon başarıyla eklendi!')),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Kupon eklenirken hata oluştu: $e')),
+      );
     }
   }
 
@@ -92,6 +172,7 @@ class _AddCouponPageState extends State<AddCouponPage> {
                       () => _selectDate(context, true)),
                   _buildDateField("Bitiş Tarihi", _endDateController,
                       () => _selectDate(context, false)),
+                  _buildImagePicker(),
                   SizedBox(height: 20),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -115,6 +196,23 @@ class _AddCouponPageState extends State<AddCouponPage> {
       ),
     );
   }
+
+  Widget _buildImagePicker() {
+    return Column(
+      children: [
+        if (_selectedImage != null)
+          Image.file(_selectedImage!, height: 150, fit: BoxFit.cover),
+        SizedBox(height: 10),
+        ElevatedButton.icon(
+          icon: Icon(Icons.image, color: Colors.white),
+          label: Text("Resim Seç", style: TextStyle(color: Colors.white)),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+          onPressed: _pickImage,
+        ),
+      ],
+    );
+  }
+
 
   Widget _buildTextField(String label, TextEditingController controller,
       {bool isNumber = false, IconData? icon}) {
@@ -177,43 +275,5 @@ class _AddCouponPageState extends State<AddCouponPage> {
     );
   }
 
-  Future<void> _addCoupon() async {
-    final couponCode = _couponCodeController.text.trim();
-    final discount = double.tryParse(_discountController.text.trim()) ?? 0.0;
-    final usageLimit = int.tryParse(_usageLimitController.text.trim()) ?? 0;
 
-    if (couponCode.isEmpty ||
-        discount <= 0 ||
-        usageLimit <= 0 ||
-        _startDate == null ||
-        _endDate == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lütfen tüm alanları doldurun.')),
-      );
-      return;
-    }
-
-    try {
-      await FirebaseFirestore.instance
-          .collection('coupons')
-          .doc(couponCode)
-          .set({
-        'couponCode': couponCode,
-        'discount': discount,
-        'discountType': _discountType,
-        'startDate': Timestamp.fromDate(_startDate!),
-        'endDate': Timestamp.fromDate(_endDate!),
-        'usageLimit': usageLimit,
-        'usedCount': 0,
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Kupon başarıyla eklendi!')),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Kupon eklenirken hata oluştu: $e')),
-      );
-    }
-  }
 }
