@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:yemekye/qrandsepet/user/sepet.dart';
 import 'package:intl/intl.dart';
 
-class ProductCard extends StatefulWidget {
+class ProductCard extends StatelessWidget {
   final String shopId;
   final String productId;
   final String productName;
@@ -22,50 +22,11 @@ class ProductCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ProductCardState createState() => _ProductCardState();
-}
-
-class _ProductCardState extends State<ProductCard>
-    with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _rotateAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    // Scale animation
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-
-    // Rotate animation
-    _rotateAnimation = Tween<double>(begin: 0, end: 0.5).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _animateButton() {
-    _controller.forward().then((_) => _controller.reverse());
-  }
-
-  @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('campaigns')
-          .where('productid', isEqualTo: widget.productId)
+          .where('productid', isEqualTo: productId)
           .snapshots(),
       builder: (context, snapshot) {
         bool hasCampaign = false;
@@ -78,8 +39,11 @@ class _ProductCardState extends State<ProductCard>
           var campaignData = snapshot.data!.docs.first;
           int discountPercent = campaignData['discount'];
           discountPrice = productPrice * (1 - discountPercent / 100);
+          startTime = (campaignData['start_time'] as Timestamp).toDate();
           endTime = (campaignData['end_time'] as Timestamp).toDate();
-          hasCampaign = endTime.isAfter(DateTime.now()); // Kampanya aktif mi?
+
+          DateTime now = DateTime.now();
+          hasCampaign = now.isAfter(startTime) && now.isBefore(endTime);
 
           if (endTime.isBefore(now)) {
             FirebaseFirestore.instance
@@ -133,11 +97,12 @@ class _ProductCardState extends State<ProductCard>
                         children: [
                           Text(
                             productName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 14,
                               fontFamily: 'BeVietnamPro',
-                              color: piece == 0 ? Colors.red : Color(0xFF353535),
+                              color:
+                                  piece == 0 ? Colors.red : Color(0xFF353535),
                               decoration: piece == 0
                                   ? TextDecoration.lineThrough
                                   : TextDecoration.none,
@@ -151,7 +116,7 @@ class _ProductCardState extends State<ProductCard>
                                     Row(
                                       children: [
                                         Text(
-                                          "₺${widget.productPrice.toStringAsFixed(2)}",
+                                          "₺${productPrice.toStringAsFixed(2)}",
                                           style: TextStyle(
                                             fontSize: 14,
                                             color: Colors.grey.shade600,
@@ -180,7 +145,7 @@ class _ProductCardState extends State<ProductCard>
                                   ],
                                 )
                               : Text(
-                                  "₺${widget.productPrice.toStringAsFixed(2)}",
+                                  "₺${productPrice.toStringAsFixed(2)}",
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.grey.shade600,
@@ -190,67 +155,42 @@ class _ProductCardState extends State<ProductCard>
                       ),
                     ),
                     Text(
-                      '$piece Adet Kaldı',
-                      style: const TextStyle(
+                      piece == 0 ? 'Stok Kalmadı' : '$piece Adet Kaldı',
+                      style: TextStyle(
                         fontFamily: 'BeVietnamPro',
                         fontSize: 13,
                         color: piece == 0 ? Colors.red : Color(0xFF353535),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () {
-                        CartManager.addToCart(
-                            shopId,
-                            productId,
-                            productName,
-                            hasCampaign ? discountPrice! : productPrice,
-                            piece,
-                            context,
-                            isOpen);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1D1D1D),
-                          borderRadius: BorderRadius.circular(50),
-                        ),
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.add_shopping_cart,
-                          color: Colors.white,
+                    if (piece > 0)
+                      GestureDetector(
+                        onTap: () {
+                          CartManager.addToCart(
+                              shopId,
+                              productId,
+                              productName,
+                              hasCampaign ? discountPrice! : productPrice,
+                              piece,
+                              context,
+                              isOpen);
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1D1D1D),
+                            borderRadius: BorderRadius.circular(50),
+                          ),
+                          width: 40,
+                          height: 40,
+                          child: const Icon(
+                            Icons.add_shopping_cart,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(width: 16),
                   ],
                 ),
-
-                // Kampanya etiketi
-                if (hasCampaign)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(50),
-                          bottomRight: Radius.circular(12),
-                        ),
-                      ),
-                      child: Text(
-                        campaignLabel!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           ),
