@@ -31,10 +31,7 @@ class _CouponListPageState extends State<CouponListPage> {
           if (coupons.isEmpty) {
             return Center(
               child: Text("Henüz kupon eklenmemiş.",
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white)),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
             );
           }
 
@@ -48,12 +45,11 @@ class _CouponListPageState extends State<CouponListPage> {
               String couponCode = data['couponCode'] ?? 'Bilinmiyor';
               double discount = (data['discount'] as num?)?.toDouble() ?? 0.0;
               String discountType = data['discountType'] ?? 'percentage';
-              DateTime startDate =
-                  (data['startDate'] as Timestamp?)?.toDate() ?? DateTime.now();
               DateTime endDate =
                   (data['endDate'] as Timestamp?)?.toDate() ?? DateTime.now();
               int usageLimit = data['usageLimit'] ?? 0;
               int usedCount = data['usedCount'] ?? 0;
+              String imageUrl = data['imageUrl'] ?? '';
 
               bool isExpired = DateTime.now().isAfter(endDate);
               bool isUsedUp = usedCount >= usageLimit;
@@ -62,10 +58,10 @@ class _CouponListPageState extends State<CouponListPage> {
                 couponCode,
                 discount,
                 discountType,
-                startDate,
                 endDate,
                 usageLimit,
                 usedCount,
+                imageUrl,
                 isExpired,
                 isUsedUp,
               );
@@ -80,10 +76,10 @@ class _CouponListPageState extends State<CouponListPage> {
     String couponCode,
     double discount,
     String discountType,
-    DateTime startDate,
     DateTime endDate,
     int usageLimit,
     int usedCount,
+    String imageUrl,
     bool isExpired,
     bool isUsedUp,
   ) {
@@ -97,6 +93,11 @@ class _CouponListPageState extends State<CouponListPage> {
         : isUsedUp
             ? "Tükendi"
             : "Aktif";
+    Color statusColor = isExpired
+        ? Colors.red
+        : isUsedUp
+            ? Colors.orange
+            : Colors.green;
 
     return AnimatedContainer(
       duration: Duration(milliseconds: 300),
@@ -108,51 +109,61 @@ class _CouponListPageState extends State<CouponListPage> {
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
         ],
       ),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        children: [
+          // **Kupon Resmi**
+          ClipRRect(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+            child: imageUrl.isNotEmpty
+                ? Image.network(imageUrl,
+                    height: 150, width: double.infinity, fit: BoxFit.cover)
+                : Image.asset("assets/images/images.jpeg",
+                    height: 150, width: double.infinity, fit: BoxFit.cover),
+          ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // **Kupon Kodu ve Durum**
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      couponCode,
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: textColor),
+                    ),
+                    Container(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+
+                // **İndirim Bilgisi**
                 Text(
-                  couponCode,
+                  discountText,
                   style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: textColor),
+                      fontSize: 18,
+                      color: Colors.deepOrange,
+                      fontWeight: FontWeight.bold),
                 ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: isExpired
-                        ? Colors.redAccent
-                        : isUsedUp
-                            ? Colors.orangeAccent
-                            : Colors.green,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    statusText,
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 8),
-            Text(
-              discountText,
-              style: TextStyle(
-                  fontSize: 18,
-                  color: Colors.deepOrange,
-                  fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+                SizedBox(height: 8),
+
+                // **Tarih Bilgileri**
                 Row(
                   children: [
                     Icon(Icons.calendar_today, size: 16, color: textColor),
@@ -163,10 +174,25 @@ class _CouponListPageState extends State<CouponListPage> {
                     ),
                   ],
                 ),
+
+                SizedBox(height: 8),
+
+                // **Kullanım Bilgisi**
+                Row(
+                  children: [
+                    Icon(Icons.check_circle_outline,
+                        size: 16, color: textColor),
+                    SizedBox(width: 4),
+                    Text(
+                      "Kullanım: $usedCount / $usageLimit",
+                      style: TextStyle(color: textColor, fontSize: 14),
+                    ),
+                  ],
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
