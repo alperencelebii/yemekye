@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:yemekye/adminpanel/campainpage.dart';
+import 'package:yemekye/adminpanel/editproduct.dart';
 
 class MyProducts extends StatelessWidget {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -77,15 +78,13 @@ class MyProducts extends StatelessWidget {
                 itemCount: shopProducts.length,
                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                 itemBuilder: (context, index) {
-  var shopProductData = shopProducts[index].data() as Map<String, dynamic>;
+                  var shopProductData = shopProducts[index].data() as Map<String, dynamic>;
 
-  // Eğer productid alanı yoksa, hata almamak için listeye eklemeyelim
-  if (!shopProductData.containsKey('productid')) {
-    return const SizedBox.shrink(); // Boş bir widget döndür
-  }
+                  if (!shopProductData.containsKey('productid')) {
+                    return const SizedBox.shrink();
+                  }
 
-  String productId = shopProductData['productid'];
-
+                  String productId = shopProductData['productid'];
 
                   return FutureBuilder(
                     future: _firestore.collection('products').doc(productId).get(),
@@ -95,10 +94,32 @@ class MyProducts extends StatelessWidget {
                       }
                       
                       if (!productSnapshot.hasData || !productSnapshot.data!.exists) {
-                        return const SizedBox.shrink(); // Ürün silinmişse göstermiyoruz
+                        return const SizedBox.shrink();
                       }
 
                       DocumentSnapshot productDoc = productSnapshot.data!;
+                      Map<String, dynamic> productData =
+                          productDoc.data() as Map<String, dynamic>;
+
+                      int stock = productData['piece'] ?? 0; // Kalan stok
+                      int initialStock = productData['initialStock'] ?? stock; // İlk girilen stok
+                      double stockThreshold = initialStock * 0.10; // %10 eşiği
+
+                      // Eğer stok kritik seviyeye düştüyse, bildirim göster
+                      if (stock <= stockThreshold && stock > 0) {
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "${productData['name']} ürünü tükenmek üzere! (${stock} adet kaldı)",
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        });
+                      }
 
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
@@ -138,7 +159,7 @@ class MyProducts extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      productDoc['name'],
+                                      productData['name'],
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -147,10 +168,19 @@ class MyProducts extends StatelessWidget {
                                     ),
                                     const SizedBox(height: 8.0),
                                     Text(
-                                      "Kategori: ${productDoc['category']}",
+                                      "Kategori: ${productData['category']}",
                                       style: const TextStyle(
                                         fontSize: 14,
                                         color: Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8.0),
+                                    Text(
+                                      "Stok: $stock adet",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: stock <= stockThreshold ? Colors.red : Colors.green,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ],
@@ -159,10 +189,15 @@ class MyProducts extends StatelessWidget {
                               IconButton(
                                 icon: const Icon(
                                   Icons.edit,
-                                  color: Colors.orange,
+                                  color: Color(0xFFE69F44),
                                 ),
                                 onPressed: () {
-                                  // Ürün düzenleme mantığı buraya eklenebilir
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditProductPage(productId: productDoc.id),
+                                    ),
+                                  );
                                 },
                               ),
                             ],
