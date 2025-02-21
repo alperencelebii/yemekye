@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:yemekye/adminpanel/weppanel/index.dart';
 import 'package:yemekye/loginregister/login.dart';
 import 'package:yemekye/yoneticipanel/Yoneticipanel.dart';
 import 'package:yemekye/screens/homepage.dart';
@@ -12,7 +13,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: FirebaseOptions(
-      apiKey: "AIzaSyDD0AQvl1VIPdfAOyqIUVAlh8EhxY_Q8k4", // Firebase Console’dan al
+      apiKey:
+          "AIzaSyDD0AQvl1VIPdfAOyqIUVAlh8EhxY_Q8k4", // Firebase Console’dan al
       authDomain: "yemekye-6fbc4.firebaseapp.com",
       projectId: "yemekye-6fbc4",
       storageBucket: "yemekye-6fbc4.firebasestorage.app",
@@ -77,7 +79,7 @@ class _AuthStateHandlerState extends State<AuthStateHandler> {
         if (snapshot.hasData) {
           return ExpandableNavbar(); // Kullanıcı giriş yaptıysa Navbar göster
         } else {
-          return LoginPage(); // Kullanıcı giriş yapmadıysa Login sayfası
+          return HomePage(); // Kullanıcı giriş yapmadıysa Login sayfası
         }
       },
     );
