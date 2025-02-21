@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:yemekye/loginregister/shop_register.dart';
 import 'package:yemekye/qrandsepet/user/addcoupon.dart';
 import 'package:yemekye/yoneticipanel/AddUsers.dart';
+import 'package:yemekye/yoneticipanel/Addcategory.dart';
 import 'package:yemekye/yoneticipanel/reports/reportlistpage.dart';
 
 class Yonetici extends StatefulWidget {
@@ -42,13 +43,11 @@ class _YoneticiState extends State<Yonetici> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.card_giftcard),
+            icon: Icon(Icons.report),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                    builder: (context) =>
-                        AddCouponPage()), // Kupon ekleme sayfasına git
+                MaterialPageRoute(builder: (context) => CategoryProductPage()),
               );
             },
           ),
@@ -300,6 +299,7 @@ class ShopDetailsPage extends StatelessWidget {
               );
             },
           ),
+          
         ],
       ),
       body: FutureBuilder<DocumentSnapshot>(

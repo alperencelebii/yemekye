@@ -1,36 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class AddProduct extends StatefulWidget {
-  const AddProduct({super.key});
+class EditProductPage extends StatefulWidget {
+  final String productId;
+
+  const EditProductPage({super.key, required this.productId});
 
   @override
-  _AddProductState createState() => _AddProductState();
+  _EditProductPageState createState() => _EditProductPageState();
 }
 
-class _AddProductState extends State<AddProduct> {
+class _EditProductPageState extends State<EditProductPage> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   final TextEditingController _pieceController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
   String? selectedCategory;
   String? selectedProduct;
+
   List<String> categories = [];
   List<String> products = [];
 
   @override
   void initState() {
     super.initState();
+    _loadProductDetails();
     _loadCategories();
   }
 
+  Future<void> _loadProductDetails() async {
+    DocumentSnapshot productDoc =
+        await _firestore.collection('products').doc(widget.productId).get();
+
+    if (productDoc.exists) {
+      setState(() {
+        selectedProduct = productDoc['name'];
+        selectedCategory = productDoc['category'];
+        _pieceController.text = productDoc['piece'].toString();
+        _priceController.text = productDoc['price'].toString();
+      });
+
+      _loadProducts(selectedCategory!);
+    }
+  }
+
   Future<void> _loadCategories() async {
-    QuerySnapshot categorySnapshot = await _firestore.collection('category_products').get();
+    QuerySnapshot categorySnapshot =
+        await _firestore.collection('category_products').get();
     setState(() {
-      categories = categorySnapshot.docs.map((doc) => doc['category'] as String).toSet().toList();
+      categories = categorySnapshot.docs
+          .map((doc) => doc['category'] as String)
+          .toSet()
+          .toList();
     });
   }
 
@@ -41,80 +63,35 @@ class _AddProductState extends State<AddProduct> {
         .get();
 
     setState(() {
-      products = productSnapshot.docs.map((doc) => doc['name'] as String).toList();
-      selectedProduct = null;
+      products =
+          productSnapshot.docs.map((doc) => doc['name'] as String).toList();
     });
   }
 
-  void _addProduct() async {
-    if (selectedCategory == null || selectedProduct == null) {
-      _showErrorMessage("Lütfen kategori ve ürün seçin");
-      return;
-    }
-
-    String piece = _pieceController.text.trim();
-    String price = _priceController.text.trim();
-
-
-    if (piece.isEmpty || price.isEmpty) {
-      _showErrorMessage("Lütfen adet ve fiyat girin");
-      return;
-    }
-
+  Future<void> _updateProduct() async {
     try {
-      User? currentUser = _auth.currentUser;
-      if (currentUser == null) {
-        _showErrorMessage("Kullanıcı oturum açmamış");
-        return;
-      }
-
-      DocumentSnapshot userDoc =
-          await _firestore.collection('sellers').doc(currentUser.uid).get();
-
-      if (!userDoc.exists || userDoc['shopid'] == null) {
-        _showErrorMessage("Kullanıcı bir mağazaya bağlı değil");
-        return;
-      }
-
-      String shopId = userDoc['shopid'];
-
-      DocumentReference productRef = await _firestore.collection('products').add({
+      await _firestore.collection('products').doc(widget.productId).update({
         'name': selectedProduct,
         'category': selectedCategory,
-        'piece': int.tryParse(piece) ?? 0,
-        'price': double.tryParse(price) ?? 0.0,
+        'piece': int.tryParse(_pieceController.text) ?? 0,
+        'price': double.tryParse(_priceController.text) ?? 0.0,
       });
 
-      await _firestore.collection('shopproduct').add({
-        'shopid': shopId,
-        'productid': productRef.id,
-      });
-
-      await _firestore.collection('shops').doc(shopId).update({
-        'productid': FieldValue.arrayUnion([productRef.id]),
-      });
-
-      _showSuccessMessage("Ürün başarıyla eklendi!");
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Ürün başarıyla güncellendi!")));
       Navigator.pop(context);
     } catch (e) {
-      _showErrorMessage("Ürün eklenirken hata oluştu: $e");
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("Güncelleme hatası: $e")));
     }
-  }
-
-  void _showErrorMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
-  }
-
-  void _showSuccessMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Ürün Ekle"),
-        backgroundColor: Color(0xFFE69F44),
+        title: const Text("Ürün Düzenle"),
+        backgroundColor: const Color(0xFFE69F44),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -128,7 +105,7 @@ class _AddProductState extends State<AddProduct> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "Yeni Ürün Bilgileri",
+                    "Ürün Bilgilerini Düzenle",
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -191,14 +168,14 @@ class _AddProductState extends State<AddProduct> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _addProduct,
+                      onPressed: _updateProduct,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFE69F44),
+                        backgroundColor: const Color(0xFFE69F44),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: const Text(
-                        "Ürünü Ekle",
+                        "Ürünü Güncelle",
                         style: TextStyle(fontSize: 16),
                       ),
                     ),
@@ -212,7 +189,8 @@ class _AddProductState extends State<AddProduct> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(String label, TextEditingController controller,
+      {TextInputType keyboardType = TextInputType.text}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextField(

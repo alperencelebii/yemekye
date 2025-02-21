@@ -14,11 +14,13 @@ class _CampaignPageState extends State<CampaignPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   String? _shopId;
+  Set<String> _selectedProducts = Set();
 
   @override
   void initState() {
     super.initState();
     _getUserShopId();
+    _moveExpiredCampaigns(); // Sayfa yüklendiğinde geçmiş kampanyaları taşı
   }
 
   Future<void> _getUserShopId() async {
@@ -53,12 +55,15 @@ class _CampaignPageState extends State<CampaignPage> {
     }
   }
 
-  void _createCampaign(String productId, String productName,
-      {Map<String, dynamic>? existingCampaign}) {
-    TextEditingController discountController = TextEditingController(
-        text: existingCampaign != null
-            ? existingCampaign['discount'].toString()
-            : '');
+  void _createCampaignForSelectedProducts() {
+    if (_selectedProducts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Lütfen en az bir ürün seçin.")),
+      );
+      return;
+    }
+
+    TextEditingController discountController = TextEditingController();
     TextEditingController startTimeController = TextEditingController();
     TextEditingController endTimeController = TextEditingController();
 
@@ -70,7 +75,7 @@ class _CampaignPageState extends State<CampaignPage> {
             borderRadius: BorderRadius.circular(16),
           ),
           title: Text(
-            "$productName için Kampanya",
+            "Seçilen Ürünler için Kampanya",
             textAlign: TextAlign.center,
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
           ),
@@ -82,14 +87,14 @@ class _CampaignPageState extends State<CampaignPage> {
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   labelText: "İndirim Oranı (%)",
-                  prefixIcon: Icon(Icons.percent, color: Colors.orange),
+                  prefixIcon: Icon(Icons.percent, color: Color(0xFFE69F44)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.orange),
+                    borderSide: BorderSide(color: Color(0xFFE69F44)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.orange),
+                    borderSide: BorderSide(color: Color(0xFFE69F44)),
                   ),
                 ),
               ),
@@ -100,14 +105,14 @@ class _CampaignPageState extends State<CampaignPage> {
                 onTap: () => _selectTime(context, startTimeController),
                 decoration: InputDecoration(
                   labelText: "Başlangıç Saati (HH:mm)",
-                  prefixIcon: Icon(Icons.access_time, color: Colors.orange),
+                  prefixIcon: Icon(Icons.access_time, color: Color(0xFFE69F44)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.orange),
+                    borderSide: BorderSide(color: Color(0xFFE69F44)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.orange),
+                    borderSide: BorderSide(color: Color(0xFFE69F44)),
                   ),
                 ),
               ),
@@ -118,14 +123,14 @@ class _CampaignPageState extends State<CampaignPage> {
                 onTap: () => _selectTime(context, endTimeController),
                 decoration: InputDecoration(
                   labelText: "Bitiş Saati (HH:mm)",
-                  prefixIcon: Icon(Icons.timer_off, color: Colors.orange),
+                  prefixIcon: Icon(Icons.timer_off, color: Color(0xFFE69F44)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.orange),
+                    borderSide: BorderSide(color: Color(0xFFE69F44)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: Colors.orange),
+                    borderSide: BorderSide(color: Color(0xFFE69F44)),
                   ),
                 ),
               ),
@@ -138,7 +143,7 @@ class _CampaignPageState extends State<CampaignPage> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
+               backgroundColor: Color(0xFFE69F44),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10)),
               ),
@@ -162,16 +167,37 @@ class _CampaignPageState extends State<CampaignPage> {
                     int.parse(endTimeController.text.split(':')[1]),
                   );
 
-                  _firestore.collection('campaigns').add({
-                    'productid': productId,
-                    'discount': int.parse(discountController.text),
-                    'start_time': Timestamp.fromDate(startTime),
-                    'end_time': Timestamp.fromDate(endTime),
-                    'shopid': _shopId,
-                    'created_at': FieldValue.serverTimestamp(),
+                  // Başlangıç zamanı kontrolü
+                  if (startTime.isBefore(now)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Başlangıç zamanı şu anki zamandan önce olamaz.")),
+                    );
+                    return;
+                  }
+
+                  // Bitiş zamanı kontrolü
+                  if (endTime.isBefore(startTime)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Bitiş zamanı başlangıç zamanından önce olamaz.")),
+                    );
+                    return;
+                  }
+
+                  _selectedProducts.forEach((productId) {
+                    _firestore.collection('campaigns').add({
+                      'productid': productId,
+                      'discount': int.parse(discountController.text),
+                      'start_time': Timestamp.fromDate(startTime),
+                      'end_time': Timestamp.fromDate(endTime),
+                      'shopid': _shopId,
+                      'created_at': FieldValue.serverTimestamp(),
+                    });
                   });
 
                   Navigator.pop(context);
+                  setState(() {
+                    _selectedProducts.clear();
+                  });
                 }
               },
               child: Text("Kaydet"),
@@ -278,7 +304,7 @@ class _CampaignPageState extends State<CampaignPage> {
                 icon: Icon(Icons.check_circle, color: Colors.white),
                 label: Text("Kaydet"),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.orange,
+                  backgroundColor: Color(0xFFE69F44),
                   padding: EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                   textStyle:
                       TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -299,7 +325,7 @@ class _CampaignPageState extends State<CampaignPage> {
       return Scaffold(
         appBar: AppBar(
           title: Text("Kampanyalar"),
-          backgroundColor: Colors.orange,
+          backgroundColor: Color(0xFFE69F44),
         ),
         body: Center(child: CircularProgressIndicator()),
       );
@@ -308,7 +334,7 @@ class _CampaignPageState extends State<CampaignPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Kampanyalarım"),
-        backgroundColor: Colors.orange,
+        backgroundColor: Color(0xFFE69F44),
         actions: [
           IconButton(
             icon: Icon(Icons.history, color: Colors.white),
@@ -322,136 +348,176 @@ class _CampaignPageState extends State<CampaignPage> {
           ),
         ],
       ),
-      body: FutureBuilder(
-        future: _moveExpiredCampaigns(),
-        builder: (context, snapshot) {
+      floatingActionButton: FloatingActionButton(
+        onPressed: _createCampaignForSelectedProducts,
+        child: Icon(Icons.local_offer),
+        backgroundColor: Color(0xFFE69F44),
+      ),
+      body: StreamBuilder(
+        stream: _firestore
+            .collection('shopproduct')
+            .where('shopid', isEqualTo: _shopId)
+            .snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          List<DocumentSnapshot> shopProducts = snapshot.data!.docs;
+
+          if (shopProducts.isEmpty) {
+            return Center(child: Text("Mağazanıza ait ürün bulunamadı."));
+          }
+
+          // Sadece bu mağazaya ait ürünlerin productid'lerini al
+          List<String> productIds =
+              shopProducts.map((doc) => doc['productid'] as String).toList();
+
           return StreamBuilder(
             stream: _firestore
-                .collection('shopproduct')
-                .where('shopid', isEqualTo: _shopId)
+                .collection('products')
+                .where(FieldPath.documentId, whereIn: productIds)
                 .snapshots(),
-            builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-              if (!snapshot.hasData) {
+            builder: (context, AsyncSnapshot<QuerySnapshot> productSnapshot) {
+              if (!productSnapshot.hasData) {
                 return Center(child: CircularProgressIndicator());
               }
 
-              List<DocumentSnapshot> shopProducts = snapshot.data!.docs;
+              Map<String, List<DocumentSnapshot>> categorizedProducts = {};
 
-              if (shopProducts.isEmpty) {
-                return Center(child: Text("Mağazanıza ait ürün bulunamadı."));
-              }
+              productSnapshot.data!.docs.forEach((product) {
+                String category = product['category'];
+                if (!categorizedProducts.containsKey(category)) {
+                  categorizedProducts[category] = [];
+                }
+                categorizedProducts[category]!.add(product);
+              });
 
-              return ListView.builder(
-                itemCount: shopProducts.length,
-                padding: EdgeInsets.all(8.0),
-                itemBuilder: (context, index) {
-                  String productId = shopProducts[index]['productid'];
+              return ListView(
+                children: categorizedProducts.entries.map((entry) {
+                  String category = entry.key;
+                  List<DocumentSnapshot> products = entry.value;
 
-                  return FutureBuilder(
-                    future:
-                        _firestore.collection('products').doc(productId).get(),
-                    builder: (context,
-                        AsyncSnapshot<DocumentSnapshot> productSnapshot) {
-                      if (!productSnapshot.hasData ||
-                          !productSnapshot.data!.exists) {
-                        return SizedBox.shrink();
-                      }
-
-                      var productData = productSnapshot.data!;
-                      String productName = productData['name'];
-
-                      return StreamBuilder(
-                        stream: _firestore
-                            .collection('campaigns')
-                            .where('productid', isEqualTo: productId)
-                            .snapshots(),
-                        builder: (context,
-                            AsyncSnapshot<QuerySnapshot> campaignSnapshot) {
-                          bool isActive = false;
-                          String? campaignId;
-                          Timestamp? startTime;
-                          Timestamp? endTime;
-
-                          if (campaignSnapshot.hasData &&
-                              campaignSnapshot.data!.docs.isNotEmpty) {
-                            var campaignData =
-                                campaignSnapshot.data!.docs.first;
-                            DateTime now = DateTime.now();
-                            campaignId = campaignData.id;
-                            startTime = campaignData['start_time'];
-                            endTime = campaignData['end_time'];
-                            isActive = now.isAfter(startTime!.toDate()) &&
-                                now.isBefore(endTime!.toDate());
-                          }
-
-                          return Card(
-                            elevation: 4,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                  return Card(
+                    margin: EdgeInsets.all(8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 4,
+                    child: ExpansionTile(
+                      title: Container(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Color(0xFFE69F44).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            category,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFE69F44),
                             ),
-                            margin: EdgeInsets.all(8),
-                            child: ListTile(
-                              leading:
-                                  Icon(Icons.local_offer, color: Colors.orange),
-                              title: Text(
-                                productName,
-                                style: TextStyle(
-                                    fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                      children: products.map((product) {
+                        String productId = product.id;
+                        String productName = product['name'];
+
+                        return StreamBuilder(
+                          stream: _firestore
+                              .collection('campaigns')
+                              .where('productid', isEqualTo: productId)
+                              .snapshots(),
+                          builder: (context,
+                              AsyncSnapshot<QuerySnapshot> campaignSnapshot) {
+                            bool hasCampaign = campaignSnapshot.hasData &&
+                                campaignSnapshot.data!.docs.isNotEmpty;
+                            DocumentSnapshot? campaignDoc;
+                            Timestamp? startTime;
+                            Timestamp? endTime;
+
+                            if (hasCampaign) {
+                              campaignDoc = campaignSnapshot.data!.docs.first;
+                              startTime = campaignDoc['start_time'];
+                              endTime = campaignDoc['end_time'];
+                            }
+
+                            return Card(
+                              margin: EdgeInsets.all(8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (isActive)
-                                    Text(
-                                      "Aktif Kampanya",
-                                      style: TextStyle(
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  if (startTime != null && endTime != null)
-                                    Text(
-                                      "Başlangıç: ${DateFormat('dd/MM/yyyy HH:mm').format(startTime!.toDate())}\nBitiş: ${DateFormat('dd/MM/yyyy HH:mm').format(endTime!.toDate())}",
-                                      style: TextStyle(fontSize: 14),
-                                    ),
-                                ],
+                              elevation: 2,
+                              child: ListTile(
+                                leading: Icon(Icons.local_offer,
+                                    color: Color(0xFFE69F44)),
+                                title: Text(
+                                  productName,
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: hasCampaign
+                                    ? Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            "Aktif Kampanya",
+                                            style: TextStyle(
+                                                color: Colors.green,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          Text(
+                                            "Başlangıç: ${DateFormat('dd/MM/yyyy HH:mm').format(startTime!.toDate())}",
+                                            style: TextStyle(fontSize: 14),
+                                          ),
+                                          Text(
+                                            "Bitiş: ${DateFormat('dd/MM/yyyy HH:mm').format(endTime!.toDate())}",
+                                            style: TextStyle(fontSize: 14),
+                                          ),
+                                        ],
+                                      )
+                                    : null,
+                                trailing: hasCampaign
+                                    ? ElevatedButton.icon(
+                                        icon: Icon(Icons.stop_circle,
+                                            color: Colors.white),
+                                        label: Text("Kampanyayı Bitir"),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                        ),
+                                        onPressed: () async {
+                                          await _endCampaign(campaignDoc!.id);
+                                        },
+                                      )
+                                    : Checkbox(
+                                        value: _selectedProducts.contains(productId),
+                                        onChanged: (bool? selected) {
+                                          setState(() {
+                                            if (selected!) {
+                                              _selectedProducts.add(productId);
+                                            } else {
+                                              _selectedProducts.remove(productId);
+                                            }
+                                          });
+                                        },
+                                      ),
                               ),
-                              trailing: isActive
-                                  ? ElevatedButton.icon(
-                                      icon: Icon(Icons.stop_circle,
-                                          color: Colors.white),
-                                      label: Text("Kampanyayı Bitir"),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      onPressed: () async {
-                                        await _endCampaign(campaignId!);
-                                      },
-                                    )
-                                  : ElevatedButton.icon(
-                                      icon: Icon(Icons.local_offer,
-                                          color: Colors.white),
-                                      label: Text("İndirim Yap"),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.orange,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                      ),
-                                      onPressed: () => _createCampaign(
-                                          productId, productName),
-                                    ),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
                   );
-                },
+                }).toList(),
               );
             },
           );
