@@ -76,7 +76,7 @@ class FeaturedShopCard extends StatelessWidget {
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Image.asset(
-                  'assets/images/placeholder.png',
+                  'assets/images/images.jpeg',
                   width: 80,
                   height: 80,
                   fit: BoxFit.cover,
