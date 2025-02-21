@@ -138,7 +138,7 @@ class MyProducts extends StatelessWidget {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: Row(
+                          child: Row( //sa
                             children: [
                               Container(
                                 width: 80,
