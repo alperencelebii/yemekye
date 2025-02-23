@@ -120,84 +120,64 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Adres bulunamadı';
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.white,
     appBar: PreferredSize(
-  preferredSize: const Size.fromHeight(82), // AppBar boyutunu arttırdık
-  child: AppBar(
-    title: const SizedBox.shrink(), // Başlık kaldırıldı, flexibleSpace kullanılacak
-    backgroundColor: Colors.black,
-    elevation: 0,
-    iconTheme: const IconThemeData(color: Colors.white),
-    actions: [
-      IconButton(
-        icon: const Icon(Icons.menu),
-        onPressed: () async {
-          try {
-            await FirebaseAuth.instance.signOut(); // Oturumu kapat
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => LoginPage()),
-              (route) => false, // Tüm önceki sayfaları kaldır
-            );
-          } catch (e) {
-            debugPrint("Oturum kapatma hatası: $e");
-          }
-        },
-      ),
-    ],
-    flexibleSpace: Padding(
-      padding: const EdgeInsets.only(top: 19), // Başlık ve buton arasındaki mesafeyi ayarla
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center, // Orta hizalama
-        children: [
-          const Text(
-            'Son Dilim',  // Başlık
-            style: TextStyle(
-              fontFamily: 'BeVietnamPro',
-              fontWeight: FontWeight.bold,
-              fontSize: 22,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8), // Başlık ile buton arasındaki boşluk
-          SizedBox(
-            width: double.infinity, // Tam ekran genişlik
-            child: ElevatedButton(
-              onPressed: _promptLocationSelection,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF9A602), // Turuncu renk
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero, // Köşeleri düzleştir
+      preferredSize: const Size.fromHeight(90), // AppBar boyutunu arttırdık
+      child: AppBar(
+        title: const SizedBox.shrink(), // Başlık kaldırıldı, flexibleSpace kullanılacak
+        backgroundColor: Colors.black,
+        elevation: 0,
+        flexibleSpace: Padding(
+          padding: const EdgeInsets.only(top: 30), // Başlık ve buton arasındaki mesafeyi ayarla
+          child: Column(
+            children: [
+              const Text(
+                'Son Dilim',  // Başlık
+                style: TextStyle(
+                  fontFamily: 'BeVietnamPro',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                  color: Colors.white,
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12), // Dikey padding
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.location_on, color: Colors.white),
-                  const SizedBox(width: 5),
-                  Text(
-                    selectedAddress,
-                    style: const TextStyle(
-                      fontFamily: 'BeVietnamPro',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.white,
+              const Spacer(), // Başlık ile buton arasındaki boşluğu korur
+              SizedBox(
+                width: double.infinity, // Tam ekran genişlik
+                child: ElevatedButton(
+                  onPressed: _promptLocationSelection,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF9A602), // Turuncu renk
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.zero, // Köşeleri düzleştir
                     ),
+                    padding: const EdgeInsets.symmetric(vertical: 12), // Dikey padding
                   ),
-                ],
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.location_on, color: Colors.white),
+                      const SizedBox(width: 5),
+                      Text(
+                        selectedAddress,
+                        style: const TextStyle(
+                          fontFamily: 'BeVietnamPro',
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     ),
-  ),
-),
-
      body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
