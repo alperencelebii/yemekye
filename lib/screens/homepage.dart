@@ -1,3 +1,4 @@
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -48,8 +49,14 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  final List<String> imagePaths = [
+    'assets/images/1.jpg',
+    'assets/images/2.jpg',
+    'assets/images/3.jpg',
+  ];
+
   Future<void> _promptLocationSelection() async {
-    final result = await showModalBottomSheet<LatLng?>(
+    final result = await showModalBottomSheet<LatLng?>( 
       context: context,
       isScrollControlled: true,
       builder: (_) => const LocationPicker(),
@@ -117,205 +124,243 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text(
-          'Son Dilim',
-          style: TextStyle(
-            fontFamily: 'BeVietnamPro',
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
+    appBar: PreferredSize(
+  preferredSize: const Size.fromHeight(82), // AppBar boyutunu arttırdık
+  child: AppBar(
+    title: const SizedBox.shrink(), // Başlık kaldırıldı, flexibleSpace kullanılacak
+    backgroundColor: Colors.black,
+    elevation: 0,
+    iconTheme: const IconThemeData(color: Colors.white),
+    actions: [
+      IconButton(
+        icon: const Icon(Icons.menu),
+        onPressed: () async {
+          try {
+            await FirebaseAuth.instance.signOut(); // Oturumu kapat
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => LoginPage()),
+              (route) => false, // Tüm önceki sayfaları kaldır
+            );
+          } catch (e) {
+            debugPrint("Oturum kapatma hatası: $e");
+          }
+        },
+      ),
+    ],
+    flexibleSpace: Padding(
+      padding: const EdgeInsets.only(top: 19), // Başlık ve buton arasındaki mesafeyi ayarla
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center, // Orta hizalama
+        children: [
+          const Text(
+            'Son Dilim',  // Başlık
+            style: TextStyle(
+              fontFamily: 'BeVietnamPro',
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: Colors.white,
+            ),
           ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.black,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.menu),
-            onPressed: () async {
-              try {
-                await FirebaseAuth.instance.signOut(); // Oturumu kapat
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                  (route) => false, // Tüm önceki sayfaları kaldır
-                );
-              } catch (e) {
-                debugPrint("Oturum kapatma hatası: $e");
-              }
-            },
+          const SizedBox(height: 8), // Başlık ile buton arasındaki boşluk
+          SizedBox(
+            width: double.infinity, // Tam ekran genişlik
+            child: ElevatedButton(
+              onPressed: _promptLocationSelection,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF9A602), // Turuncu renk
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.zero, // Köşeleri düzleştir
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12), // Dikey padding
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.location_on, color: Colors.white),
+                  const SizedBox(width: 5),
+                  Text(
+                    selectedAddress,
+                    style: const TextStyle(
+                      fontFamily: 'BeVietnamPro',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      // Konum Seçme Butonu (Padding'den etkilenmesin diye dışarıda)
-      SizedBox(
-        width: double.infinity, // Tam ekran genişlik
-        child: ElevatedButton(
-          onPressed: _promptLocationSelection,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFFF9A602), // Turuncu renk
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.zero, // Köşeleri düzleştir
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 12), // Dikey padding
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.location_on, color: Colors.white),
-              const SizedBox(width: 5),
-              Text(
-                selectedAddress,
-                style: const TextStyle(
-                  fontFamily: 'BeVietnamPro',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      
-     Padding(
-        padding: const EdgeInsets.all(16.0), // Buton hariç her şeye padding uygula
+    ),
+  ),
+),
+
+     body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-              const SizedBox(height: 20),
-              const Text(
-                'En İyiler',
-                style: TextStyle(
-                  fontFamily: 'BeVietnamPro',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                  color: Color(0xFF1D1D1D),
+            /// **Otomatik Kayan Slider**
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: CarouselSlider(
+                options: CarouselOptions(
+                  height: 160, 
+                  viewportFraction: 0.9, 
+                  autoPlay: true, 
+                  autoPlayInterval: const Duration(seconds: 5),
+                  enlargeCenterPage: true, 
                 ),
+                items: imagePaths.map((imagePath) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(10), 
+                    child: Image.asset(
+                      imagePath,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                    ),
+                  );
+                }).toList(),
               ),
-              const SizedBox(height: 5),
-              const FeaturedShops(),
-              const SizedBox(height: 5),
-              StreamBuilder<QuerySnapshot>(
-                stream:
-                    FirebaseFirestore.instance.collection('shops').snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
-                        child: Text('Hiçbir mağaza bulunamadı.'));
-                  }
+            ),
 
-                  final shops = snapshot.data!.docs.toList();
 
-                  return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // RestaurantListCard'ları yatay olarak sıralama
-                        const SizedBox(height: 20),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                child: NearbyShopsWidget(
-                                  onShopTap: (shopData) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => RestaurantDetails(
-                                          shopName: shopData['title'],
-                                          shopAddress: shopData['snippet'],
-                                          isOpen: shopData['isOpen'] ?? false,
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  const Text(
+                    'En İyiler',
+                    style: TextStyle(
+                      fontFamily: 'BeVietnamPro',
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      color: Color(0xFF1D1D1D),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  const FeaturedShops(),
+                  const SizedBox(height: 5),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance.collection('shops').snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                            child: Text('Hiçbir mağaza bulunamadı.'));
+                      }
+
+                      final shops = snapshot.data!.docs.toList();
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 20),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  child: NearbyShopsWidget(
+                                    onShopTap: (shopData) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => RestaurantDetails(
+                                            shopName: shopData['title'],
+                                            shopAddress: shopData['snippet'],
+                                            isOpen: shopData['isOpen'] ?? false,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                  selectedPosition: selectedPosition ??
-                                      LatLng(0, 0), // Seçilen konumu gönder
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: SizedBox(
-                                child: NearbyShops(
-                                  onShopTap: (shopData) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => RestaurantDetails(
-                                          shopName: shopData['title'],
-                                          shopAddress: shopData['snippet'],
-                                          isOpen: shopData['isOpen'] ?? false,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  selectedPosition: selectedPosition ??
-                                      LatLng(0, 0), // Seçilen konumu gönder
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Tüm Restaurantlar',
-                          style: TextStyle(
-                            fontFamily: 'BeVietnamPro',
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: Color(0xFF1D1D1D),
-                          ),
-                        ),
-                        // YatayRestaurantCard'ları alt alta sıralama
-                        Column(
-                          children: shops.map((shop) {
-                            final shopData =
-                                shop.data() as Map<String, dynamic>;
-                            return YatayRestaurantCard(
-                              shopName: shopData['name'] ?? 'Mağaza Adı Yok',
-                              shopAddress:
-                                  shopData['address'] ?? 'Adres Bilgisi Yok',
-                              shopImagePath:
-                                  shopData['image'] ?? 'assets/images/rest.jpg',
-                              userLocation:
-                                  selectedPosition ?? const LatLng(0, 0),
-                              shopLatitude: shopData['latitude'] ?? 0.0,
-                              shopLongitude: shopData['longitude'] ?? 0.0,
-                              isOpen: shopData['isOpen'] ?? false,
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => RestaurantDetails(
-                                      shopName: shopData['name'],
-                                      shopAddress: shopData['address'],
-                                      isOpen: shopData['isOpen'] ?? false,
-                                    ),
+                                      );
+                                    },
+                                    selectedPosition: selectedPosition ?? LatLng(0, 0), // Seçilen konumu gönder
                                   ),
-                                );
-                              },
-                            );
-                          }).toList(),
-                        ),
-                      ]);
-                },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: SizedBox(
+                                  child: NearbyShops(
+                                    onShopTap: (shopData) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => RestaurantDetails(
+                                            shopName: shopData['title'],
+                                            shopAddress: shopData['snippet'],
+                                            isOpen: shopData['isOpen'] ?? false,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    selectedPosition: selectedPosition ?? LatLng(0, 0), // Seçilen konumu gönder
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Tüm Restaurantlar',
+                            style: TextStyle(
+                              fontFamily: 'BeVietnamPro',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Color(0xFF1D1D1D),
+                            ),
+                          ),
+                          Column(
+                            children: shops.map((shop) {
+                              final shopData =
+                                  shop.data() as Map<String, dynamic>;
+                              return YatayRestaurantCard(
+                                shopName: shopData['name'] ?? 'Mağaza Adı Yok',
+                                shopAddress:
+                                    shopData['address'] ?? 'Adres Bilgisi Yok',
+                                shopImagePath:
+                                    shopData['image'] ?? 'assets/images/rest.jpg',
+                                userLocation:
+                                    selectedPosition ?? const LatLng(0, 0),
+                                shopLatitude: shopData['latitude'] ?? 0.0,
+                                shopLongitude: shopData['longitude'] ?? 0.0,
+                                isOpen: shopData['isOpen'] ?? false,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => RestaurantDetails(
+                                        shopName: shopData['name'],
+                                        shopAddress: shopData['address'],
+                                        isOpen: shopData['isOpen'] ?? false,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-],),),);}}
+      ),
+    );
+  }
+}
