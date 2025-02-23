@@ -196,10 +196,10 @@ class MarkerManagementPage extends StatefulWidget {
   @override
   _MarkerManagementPageState createState() => _MarkerManagementPageState();
 }
-
 class _MarkerManagementPageState extends State<MarkerManagementPage> {
   late GoogleMapController _mapController;
-  final Set<Marker> _markers = {};
+  Marker? _currentMarker; // Şu anki marker
+  String? _currentMarkerId; // Firestore'daki marker ID'si
 
   @override
   void initState() {
@@ -213,27 +213,32 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
         .where('shopId', isEqualTo: widget.shopId)
         .get();
 
-    setState(() {
-      _markers.clear();
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        final marker = Marker(
-          markerId: MarkerId(doc.id),
+    if (snapshot.docs.isNotEmpty) {
+      final data = snapshot.docs.first.data();
+      final markerId = snapshot.docs.first.id;
+
+      setState(() {
+        _currentMarker = Marker(
+          markerId: MarkerId(markerId),
           position: LatLng(data['latitude'], data['longitude']),
           infoWindow: InfoWindow(
             title: data['title'],
             snippet: data['snippet'],
           ),
         );
-        _markers.add(marker);
-      }
-    });
+        _currentMarkerId = markerId;
+      });
+    }
   }
 
   Future<void> _addMarker(LatLng position) async {
-    final markerId = 'marker_${DateTime.now().millisecondsSinceEpoch}';
-    final marker = Marker(
-      markerId: MarkerId(markerId),
+    if (_currentMarker != null) {
+      await _deleteOldMarker(); // Önce eski marker'ı sil
+    }
+
+    final newMarkerId = 'marker_${DateTime.now().millisecondsSinceEpoch}';
+    final newMarker = Marker(
+      markerId: MarkerId(newMarkerId),
       position: position,
       infoWindow: InfoWindow(
         title: widget.shopName,
@@ -242,15 +247,26 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
     );
 
     setState(() {
-      _markers.add(marker);
+      _currentMarker = newMarker;
+      _currentMarkerId = newMarkerId;
     });
 
-    await FirebaseFirestore.instance.collection('markers').doc(markerId).set({
+    await FirebaseFirestore.instance.collection('markers').doc(newMarkerId).set({
       'latitude': position.latitude,
       'longitude': position.longitude,
       'shopId': widget.shopId,
       'title': widget.shopName,
       'snippet': widget.shopAddress,
+    });
+  }
+
+  Future<void> _deleteOldMarker() async {
+    if (_currentMarkerId != null) {
+      await FirebaseFirestore.instance.collection('markers').doc(_currentMarkerId).delete();
+    }
+    setState(() {
+      _currentMarker = null;
+      _currentMarkerId = null;
     });
   }
 
@@ -263,7 +279,7 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
       ),
       body: GoogleMap(
         onMapCreated: (controller) => _mapController = controller,
-        markers: _markers,
+        markers: _currentMarker != null ? {_currentMarker!} : {},
         initialCameraPosition: CameraPosition(
           target: LatLng(39.92077, 32.85411), // Default konum
           zoom: 14,
@@ -275,7 +291,6 @@ class _MarkerManagementPageState extends State<MarkerManagementPage> {
     );
   }
 }
-
 class ShopDetailsPage extends StatelessWidget {
   final String shopId;
 
