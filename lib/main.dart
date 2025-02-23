@@ -11,17 +11,9 @@ import 'package:yemekye/screens/restaurant_details.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: FirebaseOptions(
-      apiKey:
-          "AIzaSyDD0AQvl1VIPdfAOyqIUVAlh8EhxY_Q8k4", // Firebase Console’dan al
-      authDomain: "yemekye-6fbc4.firebaseapp.com",
-      projectId: "yemekye-6fbc4",
-      storageBucket: "yemekye-6fbc4.firebasestorage.app",
-      messagingSenderId: "700441439019",
-      appId: "1:700441439019:web:6b9df7903caa2611f4f36e",
-    ),
-  );
+
+  await Firebase.initializeApp(); // Firebase'i yalnızca bir kez başlat
+
   runApp(MyApp());
 }
 
@@ -79,7 +71,7 @@ class _AuthStateHandlerState extends State<AuthStateHandler> {
         if (snapshot.hasData) {
           return ExpandableNavbar(); // Kullanıcı giriş yaptıysa Navbar göster
         } else {
-          return HomePage(); // Kullanıcı giriş yapmadıysa Login sayfası
+          return LoginPage(); // Kullanıcı giriş yapmadıysa Login sayfası
         }
       },
     );
