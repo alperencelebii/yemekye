@@ -29,70 +29,76 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
     _fetchNearbyShops(widget.selectedPosition);
   }
 
-  Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
-    try {
-      final markerSnapshot =
-          await FirebaseFirestore.instance.collection('markers').get();
+Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
+  try {
+    final markerSnapshot =
+        await FirebaseFirestore.instance.collection('markers').get();
 
-      final List<Map<String, dynamic>> filteredMarkers = [];
+    final List<Map<String, dynamic>> filteredMarkers = [];
 
-      for (var marker in markerSnapshot.docs) {
-        final markerData = marker.data() as Map<String, dynamic>;
+    for (var marker in markerSnapshot.docs) {
+      final markerData = marker.data();
 
-        final double? markerLat = markerData['latitude']?.toDouble();
-        final double? markerLng = markerData['longitude']?.toDouble();
-        final String? shopId = markerData['shopId'];
+      final double? markerLat = markerData['latitude']?.toDouble();
+      final double? markerLng = markerData['longitude']?.toDouble();
+      final String? shopId = markerData['shopId'];
 
-        if (markerLat == null || markerLng == null || shopId == null) {
-          print("Eksik konum veya shopId verisi: ${marker.id}");
-          continue; // Eksik veya hatalı veri varsa atlıyoruz
-        }
-
-        // Kullanıcı ile mağaza arasındaki mesafeyi hesapla
-        final distance = Geolocator.distanceBetween(
-          selectedPosition.latitude,
-          selectedPosition.longitude,
-          markerLat,
-          markerLng,
-        );
-
-        // 1 km yarıçap içinde değilse bu mağazayı dahil etme
-        if (distance > 1000) {
-          continue;
-        }
-
-        // Shops koleksiyonundan image bilgisini çekiyoruz
-        final shopDoc = await FirebaseFirestore.instance
-            .collection('shops')
-            .doc(shopId)
-            .get();
-
-        final shopData = shopDoc.data() as Map<String, dynamic>?;
-
-        filteredMarkers.add({
-          'latitude': markerLat,
-          'longitude': markerLng,
-          'shopId': shopId,
-          'title': markerData['title'] ?? 'Bilinmeyen Mağaza',
-          'snippet': markerData['snippet'] ?? '',
-          'image':
-              shopData?['image'] ?? 'assets/images/rest.jpg', // Image bilgisi
-          'isOpen':
-              shopData?['isOpen'] ?? false, // Açık/Kapalı durumu (opsiyonel)
-        });
+      if (markerLat == null || markerLng == null || shopId == null) {
+        print("Eksik konum veya shopId verisi: ${marker.id}");
+        continue; // Eksik veya hatalı veri varsa atlıyoruz
       }
 
-      setState(() {
-        _nearbyShops = filteredMarkers;
-        _isLoading = false;
-      });
-    } catch (e) {
-      print("Hata: $e");
-      setState(() {
-        _isLoading = false;
+      // Kullanıcı ile mağaza arasındaki mesafeyi hesapla
+      final distance = Geolocator.distanceBetween(
+        selectedPosition.latitude,
+        selectedPosition.longitude,
+        markerLat,
+        markerLng,
+      );
+
+      // 1 km yarıçap içinde değilse bu mağazayı dahil etme
+      if (distance > 1000) {
+        continue;
+      }
+
+      // Shops koleksiyonundan işletme verisini alıyoruz
+      final shopDoc = await FirebaseFirestore.instance
+          .collection('shops')
+          .doc(shopId)
+          .get();
+
+      final shopData = shopDoc.data();
+
+      // Eğer mağaza verisi yoksa veya silinmişse, atlıyoruz
+      if (shopData == null || (shopData.containsKey('isDeleted') && shopData['isDeleted'] == true)) {
+        print("Silinmiş restoran atlandı: $shopId");
+        continue;
+      }
+
+      filteredMarkers.add({
+        'latitude': markerLat,
+        'longitude': markerLng,
+        'shopId': shopId,
+        'title': markerData['title'] ?? 'Bilinmeyen Mağaza',
+        'snippet': markerData['snippet'] ?? '',
+        'image':
+            shopData['image'] ?? 'assets/images/rest.jpg', // Image bilgisi
+        'isOpen':
+            shopData['isOpen'] ?? false, // Açık/Kapalı durumu (opsiyonel)
       });
     }
+
+    setState(() {
+      _nearbyShops = filteredMarkers;
+      _isLoading = false;
+    });
+  } catch (e) {
+    print("Hata: $e");
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +114,7 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
       scrollDirection: Axis.horizontal, // Yatay kaydırılabilir yapı
       child: Row(
         children: _nearbyShops.map((shopData) {
-          return nearlistcard(
+          return NearListCard(
             shopName: shopData['title'],
             shopAddress: shopData['snippet'],
             shopImagePath: '', // Varsayılan görsel
@@ -126,17 +132,17 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
   }
 }
 
-class nearlistcard extends StatelessWidget {
+class NearListCard extends StatelessWidget {
   final String shopName;
   final String shopAddress;
   final String shopImagePath;
   final LatLng userLocation;
   final double shopLatitude;
   final double shopLongitude;
-  final bool isOpen; // Yeni eklenen parametre
+  final bool isOpen;
   final VoidCallback onTap;
 
-  const nearlistcard({
+  const NearListCard({
     Key? key,
     required this.shopName,
     required this.shopAddress,
@@ -145,7 +151,7 @@ class nearlistcard extends StatelessWidget {
     required this.shopLatitude,
     required this.shopLongitude,
     required this.onTap,
-    required this.isOpen, // Yeni eklenen parametre
+    required this.isOpen,
   }) : super(key: key);
 
   @override
@@ -153,17 +159,16 @@ class nearlistcard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 160,
-        height: 240,
+        width: 140,
         margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
@@ -171,76 +176,78 @@ class nearlistcard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildImage(),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      shopName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF242424),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    shopName,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF333333),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      shopAddress,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF646464),
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    shopAddress,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF777777),
                     ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 14,
-                          color: Colors.orange.withOpacity(0.8),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${(Geolocator.distanceBetween(userLocation.latitude, userLocation.longitude, shopLatitude, shopLongitude) / 1000).toStringAsFixed(2)} KM',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.orange,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 14,
+                            color: Colors.orange.withOpacity(0.8),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Icon(
-                          isOpen ? Icons.check_circle : Icons.cancel,
-                          size: 14,
-                          color: isOpen
-                              ? const Color(0xFF52BF71)
-                              : const Color(0xFFFF6767),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          isOpen ? 'Açık' : 'Kapalı',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                          const SizedBox(width: 3),
+                          Text(
+                            '${(Geolocator.distanceBetween(userLocation.latitude, userLocation.longitude, shopLatitude, shopLongitude) / 1000).toStringAsFixed(1)} KM',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Icon(
+                            isOpen ? Icons.check_circle : Icons.cancel,
+                            size: 14,
                             color: isOpen
                                 ? const Color(0xFF52BF71)
                                 : const Color(0xFFFF6767),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isOpen ? 'Açık' : 'Kapalı',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isOpen
+                                  ? const Color(0xFF52BF71)
+                                  : const Color(0xFFFF6767),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -250,20 +257,42 @@ class nearlistcard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(15),
-          topRight: Radius.circular(15),
+    return Stack(
+      children: [
+        Container(
+          height: 100,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+            image: DecorationImage(
+              image: shopImagePath.startsWith('http') && shopImagePath.isNotEmpty
+                  ? NetworkImage(shopImagePath)
+                  : const AssetImage('assets/images/rest.jpg') as ImageProvider,
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
-        image: DecorationImage(
-          image: shopImagePath.startsWith('http') && shopImagePath.isNotEmpty
-              ? NetworkImage(shopImagePath)
-              : const AssetImage('assets/images/rest.jpg') as ImageProvider,
-          fit: BoxFit.cover,
+        Container(
+          height: 100,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withOpacity(0.1),
+                Colors.black.withOpacity(0.05),
+                Colors.transparent,
+              ],
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 }

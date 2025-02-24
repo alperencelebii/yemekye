@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:yemekye/adminpanel/addproduct.dart';
 import 'package:yemekye/adminpanel/campainpage.dart';
-import 'package:yemekye/adminpanel/kampanya/pastcampainpage.dart';
 import 'package:yemekye/adminpanel/myProducts.dart';
 import 'package:yemekye/adminpanel/satisanalis.dart';
 import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
@@ -68,7 +67,95 @@ class _AdminPanelState extends State<AdminPanel> {
       print("Mağaza öne çıkarılırken hata oluştu: $e");
     }
   }
+  // ✅ Ürünü Öne Çıkarma Fonksiyonu
+  Future<void> promoteProduct(String productId) async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userDoc =
+            await _firestore.collection('sellers').doc(user.uid).get();
+        final shopId = userDoc.data()?['shopid'];
 
+        if (shopId != null) {
+          final productDoc = await _firestore
+              .collection('shops')
+              .doc(shopId)
+              .collection('products')
+              .doc(productId)
+              .get();
+
+          if (productDoc.exists) {
+            await _firestore
+                .collection('FeaturedProducts')
+                .doc(productId)
+                .set(productDoc.data()!);
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Ürün başarıyla öne çıkarıldı!")),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print("Ürün öne çıkarılırken hata oluştu: $e");
+    }
+  }
+
+  // ✅ Ürün Seçim Ekranı
+  Future<void> showProductSelection() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final userDoc = await _firestore.collection('sellers').doc(user.uid).get();
+    final shopId = userDoc.data()?['shopid'];
+    if (shopId == null) return;
+
+    final productsSnapshot = await _firestore
+        .collection('shops')
+        .doc(shopId)
+        .collection('products')
+        .get();
+
+    if (productsSnapshot.docs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Öne çıkarılacak ürün bulunamadı.")),
+      );
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: productsSnapshot.docs.map((product) {
+            return ListTile(
+              leading: Image.network(
+                product['image'] ?? '',
+                width: 50,
+                height: 50,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Icon(Icons.error),
+              ),
+              title: Text(product['name'] ?? 'Ürün Adı Yok'),
+              subtitle: Text("Fiyat: ${product['price']} TL"),
+              trailing: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  promoteProduct(product.id);
+                },
+                child: Text("Öne Çıkar"),
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
   Future<void> fetchShopInfo() async {
     try {
       final user = _auth.currentUser;
@@ -439,6 +526,16 @@ ListTile(
                 fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
+                    SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: showProductSelection,
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              icon: Icon(Icons.local_offer, color: Colors.white),
+              label: Text(
+                "Ürünü Öne Çıkar",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
       ],
     );
   }

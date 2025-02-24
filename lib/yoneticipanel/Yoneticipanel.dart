@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:yemekye/loginregister/shop_register.dart';
-import 'package:yemekye/qrandsepet/user/addcoupon.dart';
 import 'package:yemekye/yoneticipanel/AddUsers.dart';
 import 'package:yemekye/yoneticipanel/Addcategory.dart';
 import 'package:yemekye/yoneticipanel/reports/reportlistpage.dart';

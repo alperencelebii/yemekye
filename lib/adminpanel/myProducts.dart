@@ -20,16 +20,38 @@ class MyProducts extends StatelessWidget {
     return userDoc['shopid'];
   }
 
+  // ✅ Ürünü Öne Çıkarma Fonksiyonu
+  Future<void> promoteProduct(BuildContext context, String productId) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      final userDoc = await _firestore.collection('sellers').doc(user.uid).get();
+      final shopId = userDoc.data()?['shopid'];
+
+      if (shopId == null) return;
+
+      final productDoc = await _firestore.collection('products').doc(productId).get();
+
+      if (productDoc.exists) {
+        await _firestore.collection('FeaturedProducts').doc(productId).set(productDoc.data()!);
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Ürün başarıyla öne çıkarıldı!")),
+        );
+      }
+    } catch (e) {
+      print("Ürün öne çıkarılırken hata oluştu: $e");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
           "Ürünlerim",
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         backgroundColor: const Color.fromARGB(255, 255, 170, 86),
         actions: [
@@ -101,11 +123,10 @@ class MyProducts extends StatelessWidget {
                       Map<String, dynamic> productData =
                           productDoc.data() as Map<String, dynamic>;
 
-                      int stock = productData['piece'] ?? 0; // Kalan stok
-                      int initialStock = productData['initialStock'] ?? stock; // İlk girilen stok
-                      double stockThreshold = initialStock * 0.10; // %10 eşiği
+                      int stock = productData['piece'] ?? 0;
+                      int initialStock = productData['initialStock'] ?? stock;
+                      double stockThreshold = initialStock * 0.10;
 
-                      // Eğer stok kritik seviyeye düştüyse, bildirim göster
                       if (stock <= stockThreshold && stock > 0) {
                         WidgetsBinding.instance.addPostFrameCallback((_) {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -138,7 +159,7 @@ class MyProducts extends StatelessWidget {
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
-                          child: Row( //sa
+                          child: Row(
                             children: [
                               Container(
                                 width: 80,
@@ -186,19 +207,32 @@ class MyProducts extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Color(0xFFE69F44),
-                                ),
-                                onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => EditProductPage(productId: productDoc.id),
+                              Column(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.edit,
+                                      color: Color(0xFFE69F44),
                                     ),
-                                  );
-                                },
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => EditProductPage(productId: productDoc.id),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.star,
+                                      color: Colors.blueAccent,
+                                    ),
+                                    onPressed: () {
+                                      promoteProduct(context, productId);
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),

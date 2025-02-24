@@ -1,22 +1,20 @@
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:yemekye/adminpanel/%C3%B6ne%C3%A7%C4%B1karma/featuredshops.dart';
+import 'package:yemekye/components/models/popular_restaurants.dart';
 import 'package:yemekye/components/models/yak%C4%B1nlar/yakin_restaurant_list_card.dart';
-import 'package:yemekye/loginregister/login.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:yemekye/map/homescreen/locationpickermap.dart';
-import 'package:yemekye/components/models/restaurant_list_card.dart';
 import 'package:yemekye/components/models/yatay_restaurant_card.dart';
 import 'restaurant_details.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -119,62 +117,62 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return 'Adres bulunamadı';
   }
-
-@override
+  @override
 Widget build(BuildContext context) {
+  final double statusBarHeight = MediaQuery.of(context).padding.top; // Çentiği algıla
+  final double appBarHeight = statusBarHeight + 60; // Daha minimal yükseklik
+
   return Scaffold(
     backgroundColor: Colors.white,
     appBar: PreferredSize(
-      preferredSize: const Size.fromHeight(90), // AppBar boyutunu arttırdık
-      child: AppBar(
-        title: const SizedBox.shrink(), // Başlık kaldırıldı, flexibleSpace kullanılacak
-        backgroundColor: Colors.black,
-        elevation: 0,
-        flexibleSpace: Padding(
-          padding: const EdgeInsets.only(top: 30), // Başlık ve buton arasındaki mesafeyi ayarla
-          child: Column(
-            children: [
-              const Text(
-                'Son Dilim',  // Başlık
+      preferredSize: Size.fromHeight(appBarHeight),
+      child: Container(
+        color: Colors.black,
+        padding: EdgeInsets.only(top: statusBarHeight, bottom: 8), // Üst ve alt boşluk azaldı
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(left: 16),
+              child: Text(
+                'Son Dilim',
                 style: TextStyle(
                   fontFamily: 'BeVietnamPro',
                   fontWeight: FontWeight.bold,
-                  fontSize: 22,
+                  fontSize: 20, // Daha küçük font
                   color: Colors.white,
                 ),
               ),
-              const Spacer(), // Başlık ile buton arasındaki boşluğu korur
-              SizedBox(
-                width: double.infinity, // Tam ekran genişlik
-                child: ElevatedButton(
-                  onPressed: _promptLocationSelection,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF9A602), // Turuncu renk
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.zero, // Köşeleri düzleştir
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12), // Dikey padding
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.location_on, color: Colors.white),
-                      const SizedBox(width: 5),
-                      Text(
-                        selectedAddress,
-                        style: const TextStyle(
-                          fontFamily: 'BeVietnamPro',
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: Colors.white,
-                        ),
+            ),
+            GestureDetector(
+              onTap: _promptLocationSelection,
+              child: Container(
+                margin: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9A602),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.location_on, color: Colors.white, size: 16),
+                    const SizedBox(width: 5),
+                    Text(
+                      selectedAddress,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontFamily: 'BeVietnamPro',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14, // Daha küçük font
+                        color: Colors.white,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     ),
@@ -242,6 +240,15 @@ Widget build(BuildContext context) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
+                                                    const Text(
+                            'Yakın Restaurantlar',
+                            style: TextStyle(
+                              fontFamily: 'BeVietnamPro',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Color(0xFF1D1D1D),
+                            ),
+                          ),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -267,12 +274,21 @@ Widget build(BuildContext context) {
                             ],
                           ),
                           const SizedBox(height: 20),
-                          Row(
+                                                    const Text(
+                            'Popüler Restaurantlar',
+                            style: TextStyle(
+                              fontFamily: 'BeVietnamPro',
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              color: Color(0xFF1D1D1D),
+                            ),
+                          ),
+                             Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: SizedBox(
-                                  child: NearbyShops(
+                                  child: PopularRestaurantsWidget(
                                     onShopTap: (shopData) {
                                       Navigator.push(
                                         context,

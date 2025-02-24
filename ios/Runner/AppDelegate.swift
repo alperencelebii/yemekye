@@ -9,7 +9,7 @@ import GoogleMaps // Google Maps SDK'sını ekleyin
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // Google Maps API anahtarını burada sağlayın
-    GMSServices.provideAPIKey("AIzaSyDGzM7ym8mhaReXHkmV1vPviuGDvSXFRVg")
+    GMSServices.provideAPIKey("AIzaSyCJ1LSqoi3NmgYLE0kXzKm698-ODaI9Nk8")
 
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

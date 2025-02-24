@@ -6,11 +6,11 @@ class YatayRestaurantCard extends StatelessWidget {
   final String shopName;
   final String shopAddress;
   final String shopImagePath;
-  final LatLng userLocation; // Kullanıcının anlık konumu
+  final LatLng userLocation;
   final double shopLatitude;
   final double shopLongitude;
   final VoidCallback onTap;
-  final bool isOpen; // Yeni eklenen parametre
+  final bool isOpen;
 
   const YatayRestaurantCard({
     Key? key,
@@ -21,7 +21,7 @@ class YatayRestaurantCard extends StatelessWidget {
     required this.shopLatitude,
     required this.shopLongitude,
     required this.onTap,
-    required this.isOpen, // Yeni parametre
+    required this.isOpen,
   }) : super(key: key);
 
   @override
@@ -35,105 +35,109 @@ class YatayRestaurantCard extends StatelessWidget {
       shopLatitude,
       shopLongitude,
     );
-    final distanceInKm =
-        (distance / 1000).toStringAsFixed(2); // Kilometre cinsinden
+    final distanceInKm = (distance / 1000).toStringAsFixed(1);
 
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-            horizontal: 16.0, vertical: 8.0), // Sağ ve soldan 16px boşluk
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
         child: Container(
-          width: screenWidth, // Tam ekran genişlik
+          width: screenWidth * 0.88, // Daha kompakt hale getirildi
+          height: 75, // NearListCard ile orantılı hale getirildi
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(15),
+            borderRadius: BorderRadius.circular(10), // Hafif yuvarlak köşeler
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 4,
                 offset: const Offset(0, 2),
               ),
             ],
           ),
-          child: Row(
-            children: [
-              _buildImage(),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 8.0, horizontal: 6.0),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _buildImage(), // Yuvarlak köşeli görsel
+                const SizedBox(width: 10),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
                         shopName,
                         style: const TextStyle(
-                          fontSize: 16, // Daha küçük bir yazı tipi
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF242424),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
                         shopAddress,
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: 11,
                           color: Color(0xFF646464),
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(
-                            Icons.location_on,
-                            size: 14,
-                            color: Colors.orange.withOpacity(0.8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.location_on,
+                                size: 12,
+                                color: Colors.orange.withOpacity(0.9),
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                '$distanceInKm KM',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.orange,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$distanceInKm KM', // Dinamik mesafe
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.orange,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(
-                            isOpen ? Icons.check_circle : Icons.cancel,
-                            size: 14,
-                            color: isOpen
-                                ? const Color(0xFF52BF71)
-                                : const Color(0xFFFF6767),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            isOpen ? 'Açık' : 'Kapalı',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: isOpen
-                                  ? const Color(0xFF52BF71)
-                                  : const Color(0xFFFF6767),
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                isOpen ? Icons.check_circle : Icons.cancel,
+                                size: 11, // Daha küçük ikon
+                                color: isOpen
+                                    ? const Color(0xFF52BF71)
+                                    : const Color(0xFFFF6767),
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                isOpen ? 'Açık' : 'Kapalı',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: isOpen
+                                      ? const Color(0xFF52BF71)
+                                      : const Color(0xFFFF6767),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -141,20 +145,15 @@ class YatayRestaurantCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    return Container(
-      width: 90, // Daha dar bir genişlik
-      height: 90, // Sabit kare boyut
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(15),
-          bottomLeft: Radius.circular(15),
-        ),
-        image: DecorationImage(
-          image: shopImagePath.startsWith('http') && shopImagePath.isNotEmpty
-              ? NetworkImage(shopImagePath)
-              : const AssetImage('assets/images/rest.jpg') as ImageProvider,
-          fit: BoxFit.cover,
-        ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8), // NearListCard ile aynı köşe oranı
+      child: Image(
+        width: 55, // NearListCard ile aynı görsel oranı
+        height: 55,
+        fit: BoxFit.cover,
+        image: shopImagePath.startsWith('http') && shopImagePath.isNotEmpty
+            ? NetworkImage(shopImagePath)
+            : const AssetImage('assets/images/rest.jpg') as ImageProvider,
       ),
     );
   }

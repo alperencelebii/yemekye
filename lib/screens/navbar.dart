@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:yemekye/adminpanel/admin.dart';
-import 'package:yemekye/map/map.dart';
-import 'package:yemekye/map/user_map.dart';
-import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
 import 'package:yemekye/screens/search.dart';
 import 'package:yemekye/qrandsepet/user/userprofile.dart';
 import 'package:yemekye/yoneticipanel/Yoneticipanel.dart';

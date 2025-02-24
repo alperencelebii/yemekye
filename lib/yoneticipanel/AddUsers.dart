@@ -11,7 +11,7 @@ class AddUserPage extends StatelessWidget {
 
     await FirebaseFirestore.instance.runTransaction((transaction) async {
       final shopSnapshot = await transaction.get(shopRef);
-      final shopData = shopSnapshot.data() as Map<String, dynamic>?;
+      final shopData = shopSnapshot.data();
 
       if (shopData != null) {
         List<dynamic> users = shopData['sellers'] ?? [];
