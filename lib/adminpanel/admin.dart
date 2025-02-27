@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:yemekye/adminpanel/addproduct.dart';
-import 'package:yemekye/adminpanel/campainpage.dart';
-import 'package:yemekye/adminpanel/myProducts.dart';
-import 'package:yemekye/adminpanel/satisanalis.dart';
+import 'package:yemekye/adminpanel/products/addproduct.dart';
+import 'package:yemekye/adminpanel/kampanya/campainpage.dart';
+import 'package:yemekye/adminpanel/products/myProducts.dart';
+import 'package:yemekye/adminpanel/products/satisanalis.dart';
 import 'package:yemekye/qrandsepet/shops/qrcodescan.dart';
-import 'package:yemekye/adminpanel/pastOrders.dart';
+import 'package:yemekye/adminpanel/products/pastOrders.dart';
 import 'shopsettings.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -67,6 +67,7 @@ class _AdminPanelState extends State<AdminPanel> {
       print("Mağaza öne çıkarılırken hata oluştu: $e");
     }
   }
+
   // ✅ Ürünü Öne Çıkarma Fonksiyonu
   Future<void> promoteProduct(String productId) async {
     try {
@@ -156,6 +157,7 @@ class _AdminPanelState extends State<AdminPanel> {
       },
     );
   }
+
   Future<void> fetchShopInfo() async {
     try {
       final user = _auth.currentUser;
@@ -388,17 +390,17 @@ class _AdminPanelState extends State<AdminPanel> {
               MaterialPageRoute(builder: (context) => QRCodeScannerScreen()),
             ),
           ),
-ListTile(
-  leading: Icon(Icons.analytics),
-  title: Text("Satış Analizi"),
-  onTap: () => Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => HourlyOrdersScreen(), // shopId'yi göndermeye gerek yok!
-    ),
-  ),
-),
-
+          ListTile(
+            leading: Icon(Icons.analytics),
+            title: Text("Satış Analizi"),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    HourlyOrdersScreen(), // shopId'yi göndermeye gerek yok!
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -526,16 +528,16 @@ ListTile(
                 fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
           ),
         ),
-                    SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: showProductSelection,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-              icon: Icon(Icons.local_offer, color: Colors.white),
-              label: Text(
-                "Ürünü Öne Çıkar",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+        SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: showProductSelection,
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+          icon: Icon(Icons.local_offer, color: Colors.white),
+          label: Text(
+            "Ürünü Öne Çıkar",
+            style: TextStyle(color: Colors.white),
+          ),
+        ),
       ],
     );
   }
