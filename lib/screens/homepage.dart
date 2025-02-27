@@ -5,12 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:http/http.dart' as http;
 import 'package:yemekye/adminpanel/%C3%B6ne%C3%A7%C4%B1karma/featuredshops.dart';
-import 'package:yemekye/components/models/popular_restaurants.dart';
-import 'package:yemekye/components/models/yak%C4%B1nlar/yakin_restaurant_list_card.dart';
+import 'package:yemekye/components/widgets/popular_restaurants.dart';
+import 'package:yemekye/components/widgets/yak%C4%B1nlar/yakin_restaurant_list_card.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:yemekye/map/homescreen/locationpickermap.dart';
-import 'package:yemekye/components/models/yatay_restaurant_card.dart';
+import 'package:yemekye/components/widgets/yatay_restaurant_card.dart';
 import 'restaurant_details.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   Future<void> _promptLocationSelection() async {
-    final result = await showModalBottomSheet<LatLng?>( 
+    final result = await showModalBottomSheet<LatLng?>(
       context: context,
       isScrollControlled: true,
       builder: (_) => const LocationPicker(),
@@ -117,66 +117,71 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return 'Adres bulunamadı';
   }
-  @override
-Widget build(BuildContext context) {
-  final double statusBarHeight = MediaQuery.of(context).padding.top; // Çentiği algıla
-  final double appBarHeight = statusBarHeight + 60; // Daha minimal yükseklik
 
-  return Scaffold(
-    backgroundColor: Colors.white,
-    appBar: PreferredSize(
-      preferredSize: Size.fromHeight(appBarHeight),
-      child: Container(
-        color: Colors.black,
-        padding: EdgeInsets.only(top: statusBarHeight, bottom: 8), // Üst ve alt boşluk azaldı
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Padding(
-              padding: EdgeInsets.only(left: 16),
-              child: Text(
-                'Son Dilim',
-                style: TextStyle(
-                  fontFamily: 'BeVietnamPro',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20, // Daha küçük font
-                  color: Colors.white,
+  @override
+  Widget build(BuildContext context) {
+    final double statusBarHeight =
+        MediaQuery.of(context).padding.top; // Çentiği algıla
+    final double appBarHeight = statusBarHeight + 60; // Daha minimal yükseklik
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(appBarHeight),
+        child: Container(
+          color: Colors.black,
+          padding: EdgeInsets.only(
+              top: statusBarHeight, bottom: 8), // Üst ve alt boşluk azaldı
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(left: 16),
+                child: Text(
+                  'Son Dilim',
+                  style: TextStyle(
+                    fontFamily: 'BeVietnamPro',
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20, // Daha küçük font
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            GestureDetector(
-              onTap: _promptLocationSelection,
-              child: Container(
-                margin: const EdgeInsets.only(right: 16),
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9A602),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on, color: Colors.white, size: 16),
-                    const SizedBox(width: 5),
-                    Text(
-                      selectedAddress,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: const TextStyle(
-                        fontFamily: 'BeVietnamPro',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14, // Daha küçük font
-                        color: Colors.white,
+              GestureDetector(
+                onTap: _promptLocationSelection,
+                child: Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9A602),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.location_on,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 5),
+                      Text(
+                        selectedAddress,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontFamily: 'BeVietnamPro',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14, // Daha küçük font
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-     body: SingleChildScrollView(
+      body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -185,15 +190,15 @@ Widget build(BuildContext context) {
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: CarouselSlider(
                 options: CarouselOptions(
-                  height: 160, 
-                  viewportFraction: 0.9, 
-                  autoPlay: true, 
+                  height: 160,
+                  viewportFraction: 0.9,
+                  autoPlay: true,
                   autoPlayInterval: const Duration(seconds: 5),
-                  enlargeCenterPage: true, 
+                  enlargeCenterPage: true,
                 ),
                 items: imagePaths.map((imagePath) {
                   return ClipRRect(
-                    borderRadius: BorderRadius.circular(10), 
+                    borderRadius: BorderRadius.circular(10),
                     child: Image.asset(
                       imagePath,
                       width: double.infinity,
@@ -203,7 +208,6 @@ Widget build(BuildContext context) {
                 }).toList(),
               ),
             ),
-
 
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -224,7 +228,9 @@ Widget build(BuildContext context) {
                   const FeaturedShops(),
                   const SizedBox(height: 5),
                   StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance.collection('shops').snapshots(),
+                    stream: FirebaseFirestore.instance
+                        .collection('shops')
+                        .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -240,7 +246,7 @@ Widget build(BuildContext context) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 20),
-                                                    const Text(
+                          const Text(
                             'Yakın Restaurantlar',
                             style: TextStyle(
                               fontFamily: 'BeVietnamPro',
@@ -259,7 +265,8 @@ Widget build(BuildContext context) {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => RestaurantDetails(
+                                          builder: (context) =>
+                                              RestaurantDetails(
                                             shopName: shopData['title'],
                                             shopAddress: shopData['snippet'],
                                             isOpen: shopData['isOpen'] ?? false,
@@ -267,14 +274,15 @@ Widget build(BuildContext context) {
                                         ),
                                       );
                                     },
-                                    selectedPosition: selectedPosition ?? LatLng(0, 0), // Seçilen konumu gönder
+                                    selectedPosition: selectedPosition ??
+                                        LatLng(0, 0), // Seçilen konumu gönder
                                   ),
                                 ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 20),
-                                                    const Text(
+                          const Text(
                             'Popüler Restaurantlar',
                             style: TextStyle(
                               fontFamily: 'BeVietnamPro',
@@ -283,7 +291,7 @@ Widget build(BuildContext context) {
                               color: Color(0xFF1D1D1D),
                             ),
                           ),
-                             Row(
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
@@ -293,7 +301,8 @@ Widget build(BuildContext context) {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => RestaurantDetails(
+                                          builder: (context) =>
+                                              RestaurantDetails(
                                             shopName: shopData['title'],
                                             shopAddress: shopData['snippet'],
                                             isOpen: shopData['isOpen'] ?? false,
@@ -301,7 +310,8 @@ Widget build(BuildContext context) {
                                         ),
                                       );
                                     },
-                                    selectedPosition: selectedPosition ?? LatLng(0, 0), // Seçilen konumu gönder
+                                    selectedPosition: selectedPosition ??
+                                        LatLng(0, 0), // Seçilen konumu gönder
                                   ),
                                 ),
                               ),
@@ -325,8 +335,8 @@ Widget build(BuildContext context) {
                                 shopName: shopData['name'] ?? 'Mağaza Adı Yok',
                                 shopAddress:
                                     shopData['address'] ?? 'Adres Bilgisi Yok',
-                                shopImagePath:
-                                    shopData['image'] ?? 'assets/images/rest.jpg',
+                                shopImagePath: shopData['image'] ??
+                                    'assets/images/rest.jpg',
                                 userLocation:
                                     selectedPosition ?? const LatLng(0, 0),
                                 shopLatitude: shopData['latitude'] ?? 0.0,

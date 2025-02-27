@@ -4,9 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yemekye/loginregister/login.dart';
-import 'package:yemekye/qrandsepet/user/coupenlist.dart';
-import 'package:yemekye/qrandsepet/user/profileedit.dart';
-import 'package:yemekye/qrandsepet/user/userpastorders.dart'; // Kişisel Bilgiler Düzenleme
+import 'package:yemekye/screens/users/coupenlist.dart';
+import 'package:yemekye/screens/users/profileedit.dart';
+import 'package:yemekye/screens/users/userpastorders.dart'; // Kişisel Bilgiler Düzenleme
 
 class ProfilePage extends StatefulWidget {
   @override

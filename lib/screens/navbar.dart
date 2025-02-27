@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:yemekye/adminpanel/admin.dart';
 import 'package:yemekye/screens/search.dart';
-import 'package:yemekye/qrandsepet/user/userprofile.dart';
+import 'package:yemekye/screens/users/userprofile.dart';
 import 'package:yemekye/yoneticipanel/Yoneticipanel.dart';
 import 'package:yemekye/screens/homepage.dart';
 import 'package:yemekye/qrandsepet/user/sepet.dart';
