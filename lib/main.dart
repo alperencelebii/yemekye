@@ -7,7 +7,7 @@ import 'package:yemekye/screens/navbar.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(); // Firebase'i yalnızca bir kez başlat
+  await Firebase.initializeApp();
 
   runApp(MyApp());
 }
