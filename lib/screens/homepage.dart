@@ -23,6 +23,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String selectedAddress = 'Konum Seçin';
   LatLng? selectedPosition;
+   List<String> imageUrls = [];
 
   final List<String> categories = ['Pastane', 'Kafe', 'Restoran', 'Döner'];
   int selectedCategoryIndex = 0;
@@ -31,8 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadInitialLocation();
+    _fetchCampaignImages();
   }
-
   Future<void> _loadInitialLocation() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? savedAddress = prefs.getString('selectedAddress');
@@ -47,11 +48,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  final List<String> imagePaths = [
-    'assets/images/1.jpg',
-    'assets/images/2.jpg',
-    'assets/images/3.jpg',
-  ];
 
   Future<void> _promptLocationSelection() async {
     final result = await showModalBottomSheet<LatLng?>(
@@ -117,6 +113,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return 'Adres bulunamadı';
   }
+   Future<void> _fetchCampaignImages() async {
+    FirebaseFirestore.instance.collection('campaign_images').get().then((querySnapshot) {
+      List<String> urls = [];
+      for (var doc in querySnapshot.docs) {
+        if (doc.data().containsKey('image')) {
+          urls.add(doc['image']);
+        }
+      }
+      setState(() {
+        imageUrls = urls;
+      });
+    }).catchError((error) {
+      print("Error fetching campaign images: $error");
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -181,32 +193,40 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(
+       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            /// **Otomatik Kayan Slider**
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
-              child: CarouselSlider(
-                options: CarouselOptions(
-                  height: 160,
-                  viewportFraction: 0.9,
-                  autoPlay: true,
-                  autoPlayInterval: const Duration(seconds: 5),
-                  enlargeCenterPage: true,
-                ),
-                items: imagePaths.map((imagePath) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.asset(
-                      imagePath,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+              child: imageUrls.isEmpty
+                  ? Center(child: CircularProgressIndicator())
+                  : CarouselSlider(
+                      options: CarouselOptions(
+                        height: 160,
+                        viewportFraction: 0.9,
+                        autoPlay: true,
+                        autoPlayInterval: Duration(seconds: 5),
+                        enlargeCenterPage: true,
+                      ),
+                      items: imageUrls.map((imageUrl) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            imageUrl,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(child: Text('Resim yüklenemedi'));
+                            },
+                          ),
+                        );
+                      }).toList(),
                     ),
-                  );
-                }).toList(),
-              ),
             ),
 
             Padding(
