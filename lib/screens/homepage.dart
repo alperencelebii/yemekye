@@ -131,72 +131,63 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
   @override
-  Widget build(BuildContext context) {
-    final double statusBarHeight =
-        MediaQuery.of(context).padding.top; // Çentiği algıla
-    final double appBarHeight = statusBarHeight + 60; // Daha minimal yükseklik
+Widget build(BuildContext context) {
+  final double statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(appBarHeight),
-        child: Container(
-          color: Colors.black,
-          padding: EdgeInsets.only(
-              top: statusBarHeight, bottom: 8), // Üst ve alt boşluk azaldı
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(left: 16),
-                child: Text(
-                  'Son Dilim',
-                  style: TextStyle(
-                    fontFamily: 'BeVietnamPro',
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20, // Daha küçük font
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              GestureDetector(
-                onTap: _promptLocationSelection,
-                child: Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF9A602),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.location_on,
-                          color: Colors.white, size: 16),
-                      const SizedBox(width: 5),
-                      Text(
-                        selectedAddress,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                        style: const TextStyle(
-                          fontFamily: 'BeVietnamPro',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 14, // Daha küçük font
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+  return Scaffold(
+    backgroundColor: Colors.white,
+    appBar: AppBar(
+      backgroundColor: Colors.black,
+      title: const Text(
+        'Son Dilim',
+        style: TextStyle(
+          fontFamily: 'BeVietnamPro',
+          fontWeight: FontWeight.bold,
+          fontSize: 25,
+          color: Colors.white,
         ),
       ),
-       body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+      centerTitle: true, // Başlığı ortala
+    ),
+        body: Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: GestureDetector(
+            onTap: _promptLocationSelection,
+            child: Container(
+              width: double.infinity, // Tam genişlik
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9A602),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.location_on, color: Colors.white, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    selectedAddress,
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontFamily: 'BeVietnamPro',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: imageUrls.isEmpty
@@ -387,6 +378,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-    );
+    ),],),);
   }
 }
