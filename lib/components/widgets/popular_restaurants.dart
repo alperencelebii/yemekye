@@ -28,78 +28,85 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
     _fetchPopularRestaurants(widget.selectedPosition);
   }
 
-  Future<void> _fetchPopularRestaurants(LatLng selectedPosition) async {
-    try {
-      final markerSnapshot =
-          await FirebaseFirestore.instance.collection('markers').get();
+Future<void> _fetchPopularRestaurants(LatLng selectedPosition) async {
+  try {
+    final markerSnapshot =
+        await FirebaseFirestore.instance.collection('markers').get();
 
-      List<Map<String, dynamic>> restaurants = [];
+    List<Map<String, dynamic>> restaurants = [];
 
-      for (var marker in markerSnapshot.docs) {
-        final markerData = marker.data() as Map<String, dynamic>;
+    for (var marker in markerSnapshot.docs) {
+      final markerData = marker.data() as Map<String, dynamic>;
 
-        final double? markerLat = markerData['latitude']?.toDouble();
-        final double? markerLng = markerData['longitude']?.toDouble();
-        final String? shopId = markerData['shopId'];
+      final double? markerLat = markerData['latitude']?.toDouble();
+      final double? markerLng = markerData['longitude']?.toDouble();
+      final String? shopId = markerData['shopId'];
 
-        if (markerLat == null || markerLng == null || shopId == null) {
-          continue;
-        }
-
-        final distance = Geolocator.distanceBetween(
-          selectedPosition.latitude,
-          selectedPosition.longitude,
-          markerLat,
-          markerLng,
-        );
-
-        if (distance > 1000) {
-          continue;
-        }
-
-        // 🔥 Restoranın sipariş sayısını çekiyoruz
-        final orderCountQuery = await FirebaseFirestore.instance
-            .collection('carts')
-            .where('shopId', isEqualTo: shopId)
-            .where('status', isEqualTo: 'Onaylandı')
-            .get();
-
-        final int orderCount = orderCountQuery.docs.length;
-
-        final shopDoc = await FirebaseFirestore.instance
-            .collection('shops')
-            .doc(shopId)
-            .get();
-
-        final shopData = shopDoc.data() as Map<String, dynamic>?;
-
-        restaurants.add({
-          'latitude': markerLat,
-          'longitude': markerLng,
-          'shopId': shopId,
-          'title': markerData['title'] ?? 'Bilinmeyen Restoran',
-          'snippet': markerData['snippet'] ?? '',
-          'image': shopData?['image'] ?? 'assets/images/rest.jpg',
-          'isOpen': shopData?['isOpen'] ?? false,
-          'orderCount': orderCount, // 🔥 Sipariş sayısını ekledik
-          'distance': (distance / 1000).toStringAsFixed(1), // KM
-        });
+      if (markerLat == null || markerLng == null || shopId == null) {
+        continue;
       }
 
-      // 🔥 Restoranları sipariş sayısına göre sıralıyoruz (Çok sipariş alan en önde!)
-      restaurants.sort((a, b) => b['orderCount'].compareTo(a['orderCount']));
+      final distance = Geolocator.distanceBetween(
+        selectedPosition.latitude,
+        selectedPosition.longitude,
+        markerLat,
+        markerLng,
+      );
 
-      setState(() {
-        _popularRestaurants = restaurants;
-        _isLoading = false;
-      });
-    } catch (e) {
-      print("Hata: $e");
-      setState(() {
-        _isLoading = false;
+      if (distance > 1000) {
+        continue;
+      }
+
+      // 🔥 Sipariş sayısını alıyoruz
+      final orderCountQuery = await FirebaseFirestore.instance
+          .collection('carts')
+          .where('shopId', isEqualTo: shopId)
+          .where('status', isEqualTo: 'Onaylandı')
+          .get();
+
+      final int orderCount = orderCountQuery.docs.length;
+
+      final shopDoc = await FirebaseFirestore.instance
+          .collection('shops')
+          .doc(shopId)
+          .get();
+
+      final shopData = shopDoc.data() as Map<String, dynamic>?;
+
+      restaurants.add({
+        'latitude': markerLat,
+        'longitude': markerLng,
+        'shopId': shopId,
+        'title': markerData['title'] ?? 'Bilinmeyen Restoran',
+        'snippet': markerData['snippet'] ?? '',
+        'image': shopData?['image'] ?? 'assets/images/rest.jpg',
+        'isOpen': shopData?['isOpen'] ?? false,
+        'orderCount': orderCount, // 🔥 Sipariş sayısını ekledik
+        'distance': (distance / 1000).toStringAsFixed(1), // KM
       });
     }
+
+    // 🔥 Restoranları sipariş sayısına göre sıralıyoruz (Çok sipariş alan en önde!)
+    restaurants.sort((a, b) => b['orderCount'].compareTo(a['orderCount']));
+
+    // 🚀 **Burada `mounted` kontrolü ekledik**
+    if (!mounted) return;
+
+    setState(() {
+      _popularRestaurants = restaurants;
+      _isLoading = false;
+    });
+  } catch (e) {
+    print("Hata: $e");
+
+    // 🚀 **Burada da `mounted` kontrolü ekledik**
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
 
   @override
   Widget build(BuildContext context) {

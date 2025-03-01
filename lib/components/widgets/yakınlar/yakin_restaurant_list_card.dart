@@ -31,9 +31,7 @@ class _NearbyShopsWidgetState extends State<NearbyShopsWidget> {
 
 Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
   try {
-    final markerSnapshot =
-        await FirebaseFirestore.instance.collection('markers').get();
-
+    final markerSnapshot = await FirebaseFirestore.instance.collection('markers').get();
     final List<Map<String, dynamic>> filteredMarkers = [];
 
     for (var marker in markerSnapshot.docs) {
@@ -45,10 +43,9 @@ Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
 
       if (markerLat == null || markerLng == null || shopId == null) {
         print("Eksik konum veya shopId verisi: ${marker.id}");
-        continue; // Eksik veya hatalı veri varsa atlıyoruz
+        continue;
       }
 
-      // Kullanıcı ile mağaza arasındaki mesafeyi hesapla
       final distance = Geolocator.distanceBetween(
         selectedPosition.latitude,
         selectedPosition.longitude,
@@ -56,20 +53,16 @@ Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
         markerLng,
       );
 
-      // 1 km yarıçap içinde değilse bu mağazayı dahil etme
       if (distance > 1000) {
         continue;
       }
 
-      // Shops koleksiyonundan işletme verisini alıyoruz
       final shopDoc = await FirebaseFirestore.instance
           .collection('shops')
           .doc(shopId)
           .get();
 
       final shopData = shopDoc.data();
-
-      // Eğer mağaza verisi yoksa veya silinmişse, atlıyoruz
       if (shopData == null || (shopData.containsKey('isDeleted') && shopData['isDeleted'] == true)) {
         print("Silinmiş restoran atlandı: $shopId");
         continue;
@@ -81,12 +74,13 @@ Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
         'shopId': shopId,
         'title': markerData['title'] ?? 'Bilinmeyen Mağaza',
         'snippet': markerData['snippet'] ?? '',
-        'image':
-            shopData['image'] ?? 'assets/images/rest.jpg', // Image bilgisi
-        'isOpen':
-            shopData['isOpen'] ?? false, // Açık/Kapalı durumu (opsiyonel)
+        'image': shopData['image'] ?? 'assets/images/rest.jpg',
+        'isOpen': shopData['isOpen'] ?? false,
       });
     }
+
+    // **Mounted kontrolü ekliyoruz**
+    if (!mounted) return;
 
     setState(() {
       _nearbyShops = filteredMarkers;
@@ -94,6 +88,7 @@ Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
     });
   } catch (e) {
     print("Hata: $e");
+    if (!mounted) return;
     setState(() {
       _isLoading = false;
     });
