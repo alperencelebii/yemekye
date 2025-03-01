@@ -169,14 +169,13 @@ class _RegisterPageState extends State<RegisterPage> {
       CollectionReference collection = FirebaseFirestore.instance
           .collection(_selectedRole == 'Seller' ? 'sellers' : 'users');
 
-      await collection.doc(userId).set({
-        'name': name,
-        'username': username,
-        'email': email,
-        'phoneNumber': phoneNumber,
-        'role': _selectedRole,
-        if (_selectedRole == 'Seller') 'shopId': shopId,
-      });
+await collection.doc(userId).set({
+  'name': name,
+  'username': username,
+  'email': email,
+  'phoneNumber': phoneNumber,
+  if (_selectedRole == 'Seller') 'shopid': shopId, // Sadece Seller ise shopId ekleniyor
+});
 
       if (_selectedRole == 'Seller') {
         await FirebaseFirestore.instance
