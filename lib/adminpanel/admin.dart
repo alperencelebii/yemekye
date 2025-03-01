@@ -158,69 +158,40 @@ class _AdminPanelState extends State<AdminPanel> {
     );
   }
 
-Future<void> fetchShopInfo() async {
-  try {
-    final user = _auth.currentUser;
+  Future<void> fetchShopInfo() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final userDoc =
+            await _firestore.collection('sellers').doc(user.uid).get();
+        final shopId = userDoc.data()?['shopid'];
 
-    if (user == null) {
+        if (shopId != null) {
+          final shopDoc =
+              await _firestore.collection('shops').doc(shopId).get();
+          setState(() {
+            shopInfo = shopDoc.data();
+            isOpen = shopDoc.data()?['isOpen'] ?? false;
+            isLoading = false;
+          });
+        }
+            if (user == null) {
       print("HATA: Kullanıcı giriş yapmamış!");
+      
+    } else {
+          setState(() {
+            shopInfo = null;
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print("Mağaza bilgisi alınırken hata oluştu: $e");
       setState(() {
         isLoading = false;
       });
-      return; // Kullanıcı yoksa işlem yapmaya gerek yok
     }
-
-    final userDoc = await _firestore.collection('sellers').doc(user.uid).get();
-    
-    if (!userDoc.exists) {
-      print("HATA: Kullanıcı sellers koleksiyonunda kayıtlı değil!");
-      setState(() {
-        shopInfo = null;
-        isLoading = false;
-      });
-      return;
-    }
-
-    final shopId = userDoc.data()?['shopid'];
-    
-    if (shopId == null) {
-      print("HATA: Kullanıcıya ait shopId bulunamadı!");
-      setState(() {
-        shopInfo = null;
-        isLoading = false;
-      });
-      return;
-    }
-
-    print("Shop ID: $shopId");
-
-    final shopDoc = await _firestore.collection('shops').doc(shopId).get();
-
-    if (!shopDoc.exists) {
-      print("HATA: Firestore'da bu shopId ile mağaza bulunamadı!");
-      setState(() {
-        shopInfo = null;
-        isLoading = false;
-      });
-      return;
-    }
-
-    setState(() {
-      shopInfo = shopDoc.data();
-      isOpen = shopDoc.data()?['isOpen'] ?? false;
-      isLoading = false;
-    });
-
-    print("Mağaza Bilgisi Alındı: $shopInfo");
-
-  } catch (e, stackTrace) {
-    print("Mağaza bilgisi alınırken hata oluştu: $e");
-    print("Hata Detayı: $stackTrace");
-    setState(() {
-      isLoading = false;
-    });
   }
-}
 
   Future<void> fetchOrdersData() async {
     try {
