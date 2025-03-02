@@ -40,28 +40,28 @@ class YatayRestaurantCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6.0), // Daha fazla boşluk
         child: Container(
-          width: screenWidth * 0.88, // Daha kompakt hale getirildi
-          height: 75, // NearListCard ile orantılı hale getirildi
+          width: screenWidth * 0.90, // Genişliği biraz artırdık
+          height: 90, // Yüksekliği artırdık
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(10), // Hafif yuvarlak köşeler
+            borderRadius: BorderRadius.circular(12), // Hafif yuvarlak köşeler
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 6, // Gölgeyi biraz daha belirgin yapıyoruz
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 _buildImage(), // Yuvarlak köşeli görsel
-                const SizedBox(width: 10),
+                const SizedBox(width: 12), // Daha fazla boşluk
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,24 +70,24 @@ class YatayRestaurantCard extends StatelessWidget {
                       Text(
                         shopName,
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 15, // Daha büyük yazı tipi
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF242424),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         shopAddress,
                         style: const TextStyle(
-                          fontSize: 11,
+                          fontSize: 12, // Yazı boyutunu biraz büyüttük
                           color: Color(0xFF646464),
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -95,14 +95,14 @@ class YatayRestaurantCard extends StatelessWidget {
                             children: [
                               Icon(
                                 Icons.location_on,
-                                size: 12,
+                                size: 14, // Daha büyük ikon
                                 color: Colors.orange.withOpacity(0.9),
                               ),
-                              const SizedBox(width: 2),
+                              const SizedBox(width: 4),
                               Text(
                                 '$distanceInKm KM',
                                 style: const TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 12, // Daha büyük yazı boyutu
                                   fontWeight: FontWeight.w500,
                                   color: Colors.orange,
                                 ),
@@ -113,16 +113,16 @@ class YatayRestaurantCard extends StatelessWidget {
                             children: [
                               Icon(
                                 isOpen ? Icons.check_circle : Icons.cancel,
-                                size: 11, // Daha küçük ikon
+                                size: 14, // Daha büyük ikon
                                 color: isOpen
                                     ? const Color(0xFF52BF71)
                                     : const Color(0xFFFF6767),
                               ),
-                              const SizedBox(width: 3),
+                              const SizedBox(width: 4),
                               Text(
                                 isOpen ? 'Açık' : 'Kapalı',
                                 style: TextStyle(
-                                  fontSize: 11,
+                                  fontSize: 12, // Daha büyük yazı boyutu
                                   fontWeight: FontWeight.w500,
                                   color: isOpen
                                       ? const Color(0xFF52BF71)
@@ -146,10 +146,10 @@ class YatayRestaurantCard extends StatelessWidget {
 
   Widget _buildImage() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8), // NearListCard ile aynı köşe oranı
+      borderRadius: BorderRadius.circular(10), // NearListCard ile aynı köşe oranı
       child: Image(
-        width: 55, // NearListCard ile aynı görsel oranı
-        height: 55,
+        width: 70, // Görselin genişliğini biraz artırdık
+        height: 70, // Görselin yüksekliğini artırdık
         fit: BoxFit.cover,
         image: shopImagePath.startsWith('http') && shopImagePath.isNotEmpty
             ? NetworkImage(shopImagePath)
