@@ -19,7 +19,6 @@ class RestaurantDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        // Shop bilgilerini çekiyoruz
         future: FirebaseFirestore.instance
             .collection('shops')
             .where('name', isEqualTo: shopName)
@@ -35,25 +34,26 @@ class RestaurantDetails extends StatelessWidget {
 
           final shopDoc = snapshot.data!.docs.first;
           final shopData = shopDoc.data();
-          final imageUrl =
-              shopData['image'] != null && shopData['image'] is String
-                  ? shopData['image'] as String
-                  : 'assets/images/rest.jpg';
+          final imageUrl = shopData['image'] ?? 'assets/images/rest.jpg';
+          final totalRating = (shopData['averageRating'] as num?)?.toDouble() ?? 0.0;
 
           return Stack(
             children: [
+              /// **Header Image**
               Container(
                 height: MediaQuery.of(context).size.height * 0.4,
                 width: double.infinity,
                 decoration: BoxDecoration(
                   image: DecorationImage(
-                    image: (imageUrl.startsWith('http') && imageUrl.isNotEmpty)
+                    image: (imageUrl.startsWith('http'))
                         ? NetworkImage(imageUrl) as ImageProvider
                         : const AssetImage('assets/images/rest.jpg'),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
+
+              /// **Main Content**
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Container(
@@ -66,84 +66,97 @@ class RestaurantDetails extends StatelessWidget {
                       topRight: Radius.circular(30),
                     ),
                   ),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   child: SingleChildScrollView(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        /// **Shop Name & Stylish Rating**
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              shopName,
-                              style: const TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'BeVietnamPro',
-                              ),
-                            ),
-                            PopupMenuButton<String>(
-                              onSelected: (value) {
-                                if (value == 'report') {
-                                  _showReportDialog(context, shopDoc.id);
-                                }
-                              },
-                              itemBuilder: (context) => [
-                                const PopupMenuItem(
-                                  value: 'report',
-                                  child: Text('Rapor Et'),
+                            Row(
+                              children: [
+                                /// **Shop Name**
+                                Text(
+                                  shopName,
+                                  style: const TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'BeVietnamPro',
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+
+                                /// **Modern Rating Badge**
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade100, // Soft yellow background
+                                    borderRadius: BorderRadius.circular(20), // Rounded shape
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        totalRating.toStringAsFixed(1), // Example: 4.5
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
-                              icon: const Icon(Icons.more_horiz,
-                                  color: Color(0xFF1D1D1D)),
+                            ),
+
+                            /// **Report Button**
+                            IconButton(
+                              icon: const Icon(Icons.flag, color: Colors.red),
+                              onPressed: () {
+                                _showReportDialog(context, shopDoc.id);
+                              },
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on,
-                                color: Color(0xFF22BA61)),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: GestureDetector(
-                                onTap: () async {
-                                  // Marker konumunu alalım
-                                  final markerSnapshot = await FirebaseFirestore
-                                      .instance
-                                      .collection('markers')
-                                      .where('shopId', isEqualTo: shopDoc.id)
-                                      .get();
 
-                                  if (markerSnapshot.docs.isNotEmpty) {
-                                    final markerData =
-                                        markerSnapshot.docs.first.data();
-                                    final latitude =
-                                        markerData['latitude'] as double?;
-                                    final longitude =
-                                        markerData['longitude'] as double?;
+                        const SizedBox(height: 10),
 
-                                    if (latitude != null && longitude != null) {
-                                      final Uri googleMapsUri = Uri.parse(
-                                          'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
+                        /// **Address with Google Maps Link**
+                        GestureDetector(
+                          onTap: () async {
+                            final markerSnapshot = await FirebaseFirestore.instance
+                                .collection('markers')
+                                .where('shopId', isEqualTo: shopDoc.id)
+                                .get();
 
-                                      try {
-                                        if (await launchUrl(googleMapsUri)) {
-                                          // Başarılı bir şekilde Google Maps açıldı
-                                          debugPrint("Google Maps açıldı.");
-                                        } else {
-                                          // Google Maps açılamadı
-                                          debugPrint("Google Maps açılamadı.");
-                                        }
-                                      } catch (e) {
-                                        debugPrint("Hata oluştu: $e");
-                                      }
-                                    } else {
-                                      debugPrint("Konum bilgisi eksik.");
-                                    }
-                                  }
-                                },
+                            if (markerSnapshot.docs.isNotEmpty) {
+                              final markerData = markerSnapshot.docs.first.data();
+                              final latitude = markerData['latitude'] as double?;
+                              final longitude = markerData['longitude'] as double?;
+
+                              if (latitude != null && longitude != null) {
+                                final Uri googleMapsUri = Uri.parse(
+                                    'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
+
+                                if (await launchUrl(googleMapsUri)) {
+                                  debugPrint("Google Maps açıldı.");
+                                } else {
+                                  debugPrint("Google Maps açılamadı.");
+                                }
+                              } else {
+                                debugPrint("Konum bilgisi eksik.");
+                              }
+                            }
+                          },
+                          child: Row(
+                            children: [
+                              const Icon(Icons.location_on, color: Color(0xFF22BA61)),
+                              const SizedBox(width: 4),
+                              Expanded(
                                 child: Text(
                                   shopAddress,
                                   style: const TextStyle(
@@ -151,14 +164,15 @@ class RestaurantDetails extends StatelessWidget {
                                     decoration: TextDecoration.underline,
                                     color: Colors.blue,
                                   ),
-                                  softWrap: true,
-                                  overflow: TextOverflow.visible,
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+
                         const SizedBox(height: 16),
+
+                        /// **Product List**
                         _buildProductList(shopDoc),
                       ],
                     ),
@@ -172,16 +186,16 @@ class RestaurantDetails extends StatelessWidget {
     );
   }
 
-  Widget _buildProductList(
-      QueryDocumentSnapshot<Map<String, dynamic>> shopDoc) {
+  /// **Product List Widget**
+  Widget _buildProductList(QueryDocumentSnapshot<Map<String, dynamic>> shopDoc) {
     final shopData = shopDoc.data();
     final productIds =
-        shopData['productid'] != null && shopData['productid'] is List
+        (shopData['productid'] != null && shopData['productid'] is List)
             ? List<String>.from(shopData['productid'])
             : <String>[];
 
     if (productIds.isEmpty) {
-      return const Text('Bu mağazada ürün bulunamadı.');
+      return const Center(child: Text('Bu mağazada ürün bulunamadı.'));
     }
 
     return FutureBuilder<QuerySnapshot>(
@@ -195,7 +209,7 @@ class RestaurantDetails extends StatelessWidget {
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Text('Ürün bulunamadı.');
+          return const Center(child: Text('Ürün bulunamadı.'));
         }
 
         final products = snapshot.data!.docs;
@@ -229,7 +243,7 @@ class RestaurantDetails extends StatelessWidget {
                     isOpen: isOpen,
                     productPrice: (product['price'] as num?)?.toDouble() ?? 0.0,
                     piece: product['piece'] ?? 0,
-                    shopId: shopDoc.id, // Firestore belge kimliği
+                    shopId: shopDoc.id,
                   );
                 }).toList(),
               ],
@@ -239,6 +253,7 @@ class RestaurantDetails extends StatelessWidget {
       },
     );
   }
+
 
   void _showReportDialog(BuildContext context, String shopId) {
     final TextEditingController topicController = TextEditingController();
@@ -252,22 +267,12 @@ class RestaurantDetails extends StatelessWidget {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(
-                controller: topicController,
-                decoration: const InputDecoration(labelText: 'Konu'),
-              ),
-              TextField(
-                controller: messageController,
-                decoration: const InputDecoration(labelText: 'Mesaj'),
-                maxLines: 3,
-              ),
+              TextField(controller: topicController, decoration: const InputDecoration(labelText: 'Konu')),
+              TextField(controller: messageController, decoration: const InputDecoration(labelText: 'Mesaj'), maxLines: 3),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('İptal'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
             ElevatedButton(
               onPressed: () {
                 final topic = topicController.text.trim();
@@ -284,6 +289,8 @@ class RestaurantDetails extends StatelessWidget {
       },
     );
   }
+
+
 
   void _reportShop(String shopId, String topic, String message) async {
     final reportCollection = FirebaseFirestore.instance.collection('reports');
