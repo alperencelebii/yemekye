@@ -147,35 +147,36 @@ Widget build(BuildContext context) {
           color: Colors.white,
         ),
       ),
-      centerTitle: true, // Başlığı ortala
+      centerTitle: true, 
     ),
-        body: Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: GestureDetector(
-            onTap: _promptLocationSelection,
-            child: Container(
-              width: double.infinity, // Tam genişlik
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF9A602),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.location_on, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    selectedAddress,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontFamily: 'BeVietnamPro',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
-                      color: Colors.white,
+        body: SingleChildScrollView(
+        child: Column(
+  children: [
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: GestureDetector(
+        onTap: _promptLocationSelection,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9A602),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.location_on, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                selectedAddress,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: const TextStyle(
+                  fontFamily: 'BeVietnamPro',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                  color: Colors.white,
                     ),
                   ),
                 ],
@@ -183,9 +184,7 @@ Widget build(BuildContext context) {
             ),
           ),
         ),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
             Padding(
@@ -225,19 +224,6 @@ Widget build(BuildContext context) {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-                  const Text(
-                    'En İyiler',
-                    style: TextStyle(
-                      fontFamily: 'BeVietnamPro',
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: Color(0xFF1D1D1D),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  const FeaturedShops(),
-                  const SizedBox(height: 5),
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('shops')
@@ -256,7 +242,7 @@ Widget build(BuildContext context) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 20),
+
                           const Text(
                             'Yakın Restaurantlar',
                             style: TextStyle(
@@ -377,7 +363,7 @@ Widget build(BuildContext context) {
             ),
           ],
         ),
-      ),
-    ),],),);
+  ],
+    ),),);
   }
 }

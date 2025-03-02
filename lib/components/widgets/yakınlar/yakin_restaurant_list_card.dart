@@ -112,7 +112,7 @@ Future<void> _fetchNearbyShops(LatLng selectedPosition) async {
           return NearListCard(
             shopName: shopData['title'],
             shopAddress: shopData['snippet'],
-            shopImagePath: '', // Varsayılan görsel
+            shopImagePath: shopData['image'], // Varsayılan görsel
             userLocation: widget.selectedPosition,
             shopLatitude: shopData['latitude'],
             shopLongitude: shopData['longitude'],

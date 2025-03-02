@@ -159,38 +159,37 @@ class _AdminPanelState extends State<AdminPanel> {
   }
 
   Future<void> fetchShopInfo() async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        final userDoc =
-            await _firestore.collection('sellers').doc(user.uid).get();
-        final shopId = userDoc.data()?['shopid'];
+try {
+  final user = _auth.currentUser;
+  if (user != null) {
+    final userDoc =
+        await _firestore.collection('sellers').doc(user.uid).get();
+    final shopId = userDoc.data()?['shopid'];
 
-        if (shopId != null) {
-          final shopDoc =
-              await _firestore.collection('shops').doc(shopId).get();
-          setState(() {
-            shopInfo = shopDoc.data();
-            isOpen = shopDoc.data()?['isOpen'] ?? false;
-            isLoading = false;
-          });
-        }
-            if (user == null) {
-      print("HATA: Kullanıcı giriş yapmamış!");
-      
-    } else {
-          setState(() {
-            shopInfo = null;
-            isLoading = false;
-          });
-        }
+
+    if (shopId != null) {
+      final shopDoc = await _firestore.collection('shops').doc(shopId).get();
+
+      if (shopDoc.exists) {
+        setState(() {
+          shopInfo = shopDoc.data();
+          isOpen = shopDoc.data()?['isOpen'] ?? false;
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          shopInfo = null;
+          isLoading = false;
+        });
       }
-    } catch (e) {
-      print("Mağaza bilgisi alınırken hata oluştu: $e");
-      setState(() {
-        isLoading = false;
-      });
     }
+  }
+} catch (e) {
+  print("Mağaza bilgisi alınırken hata oluştu: $e");
+  setState(() {
+    isLoading =false;
+});
+}
   }
 
   Future<void> fetchOrdersData() async {
