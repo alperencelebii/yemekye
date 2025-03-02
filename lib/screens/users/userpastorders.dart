@@ -129,11 +129,15 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
               final order = orders[index];
               final shopId = order['shopId'];
               final shopName = order['shopName'];
-
               final shopAddress = order['shopAddress'];
               final products = order['products'] as List<Map<String, dynamic>>;
               final totalPrice = order['totalPrice'] as double;
-              final updatedAt = order['updatedAt'] as DateTime;
+              final updatedAt = order['updatedAt'] as Timestamp?;
+
+              String formattedDate = 'N/A';
+              if (updatedAt != null) {
+                formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(updatedAt.toDate());
+              }
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
@@ -154,33 +158,27 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                           color: Colors.blueAccent,
                         ),
                       ),
-
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.store,
-                              size: 18, color: Colors.blueGrey),
+                          const Icon(Icons.store, size: 18, color: Colors.blueGrey),
                           const SizedBox(width: 5),
                           Text(shopName, style: const TextStyle(fontSize: 16)),
                         ],
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.location_on,
-                              size: 18, color: Colors.redAccent),
+                          const Icon(Icons.location_on, size: 18, color: Colors.redAccent),
                           const SizedBox(width: 5),
-                          Text(shopAddress,
-                              style: const TextStyle(fontSize: 14)),
+                          Text(shopAddress, style: const TextStyle(fontSize: 14)),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.date_range,
-                              size: 18, color: Colors.green),
+                          const Icon(Icons.date_range, size: 18, color: Colors.green),
                           const SizedBox(width: 5),
-                          Text(DateFormat('dd MMM yyyy, HH:mm')
-                              .format(updatedAt)),
+                          Text(formattedDate), // Updated here
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -194,16 +192,14 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                       ),
                       const Divider(height: 20, thickness: 1),
                       const Text('Ürünler:',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 6),
                       ...products.map((product) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             children: [
-                              const Icon(Icons.shopping_bag,
-                                  size: 18, color: Colors.grey),
+                              const Icon(Icons.shopping_bag, size: 18, color: Colors.grey),
                               const SizedBox(width: 5),
                               Text(
                                 '${product['name']} x${product['quantity']}',
@@ -261,7 +257,7 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                       const SizedBox(height: 10),
                       // Ortalama puanı göster
                       Text(
-                        'Ortalama Puan: ${averageRating.toStringAsFixed(2)}', // Ondalık sayı gösteriyoruz
+                        'Ortalama Puan: ${averageRating.toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
