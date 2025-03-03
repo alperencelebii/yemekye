@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yemekye/loginregister/login.dart';
 import 'package:yemekye/screens/users/coupenlist.dart';
+import 'package:yemekye/screens/users/favoritesrestaurant.dart';
 import 'package:yemekye/screens/users/profileedit.dart';
 import 'package:yemekye/screens/users/userpastorders.dart'; // Kişisel Bilgiler Düzenleme
 
@@ -101,33 +102,36 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildProfileSection() {
-    return _buildContainer(
-      children: [
-        _buildListTile(Icons.person, "Kişisel Bilgiler", () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => ProfileEditPage()),
-          );
-        }),
-        _buildListTile(Icons.local_offer, "Kuponlarım", () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CouponListPage()),
-          );
-        }),
-        _buildListTile(Icons.support_agent, "Bize Ulaşın", () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => UserPastOrdersScreen()),
-          );
-        }),
-        _buildListTile(Icons.inventory_outlined, "Arkadaşını Davet Et", () {
-          _shareInviteLink(context);
-        }),
-      ],
-    );
-  }
+Widget _buildProfileSection() {
+  return _buildContainer(
+    children: [
+      _buildListTile(Icons.person, "Kişisel Bilgiler", () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ProfileEditPage()),
+        );
+      }),
+      _buildListTile(Icons.local_offer, "Kuponlarım", () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => CouponListPage()),
+        );
+      }),
+      _buildListTile(Icons.support_agent, "Bize Ulaşın", () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => UserPastOrdersScreen()),
+        );
+      }),
+      _buildListTile(Icons.favorite, "Favori Restoranlar", () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => FavoriteRestaurantsPage()), // Yeni sayfaya geçiş
+        );
+      }),
+    ],
+  );
+}
 
   Widget _buildInfoSection() {
     return _buildContainer(

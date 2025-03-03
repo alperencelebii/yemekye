@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PopularRestaurantsWidget extends StatefulWidget {
   final Function(Map<String, dynamic> shopData) onShopTap;
@@ -28,85 +29,112 @@ class _PopularRestaurantsWidgetState extends State<PopularRestaurantsWidget> {
     _fetchPopularRestaurants(widget.selectedPosition);
   }
 
-Future<void> _fetchPopularRestaurants(LatLng selectedPosition) async {
-  try {
-    final markerSnapshot =
-        await FirebaseFirestore.instance.collection('markers').get();
+  Future<void> _fetchPopularRestaurants(LatLng selectedPosition) async {
+    try {
+      final markerSnapshot =
+          await FirebaseFirestore.instance.collection('markers').get();
 
-    List<Map<String, dynamic>> restaurants = [];
+      List<Map<String, dynamic>> restaurants = [];
 
-    for (var marker in markerSnapshot.docs) {
-      final markerData = marker.data() as Map<String, dynamic>;
+      for (var marker in markerSnapshot.docs) {
+        final markerData = marker.data() as Map<String, dynamic>;
 
-      final double? markerLat = markerData['latitude']?.toDouble();
-      final double? markerLng = markerData['longitude']?.toDouble();
-      final String? shopId = markerData['shopId'];
+        final double? markerLat = markerData['latitude']?.toDouble();
+        final double? markerLng = markerData['longitude']?.toDouble();
+        final String? shopId = markerData['shopId'];
 
-      if (markerLat == null || markerLng == null || shopId == null) {
-        continue;
+        if (markerLat == null || markerLng == null || shopId == null) {
+          continue;
+        }
+
+        final distance = Geolocator.distanceBetween(
+          selectedPosition.latitude,
+          selectedPosition.longitude,
+          markerLat,
+          markerLng,
+        );
+
+        if (distance > 1000) {
+          continue;
+        }
+
+        // Sipariş sayısını alıyoruz
+        final orderCountQuery = await FirebaseFirestore.instance
+            .collection('carts')
+            .where('shopId', isEqualTo: shopId)
+            .where('status', isEqualTo: 'Onaylandı')
+            .get();
+
+        final int orderCount = orderCountQuery.docs.length;
+
+        final shopDoc = await FirebaseFirestore.instance
+            .collection('shops')
+            .doc(shopId)
+            .get();
+
+        final shopData = shopDoc.data() as Map<String, dynamic>?;
+
+        // Kullanıcı favori durumunu kontrol ediyoruz
+        final user = FirebaseAuth.instance.currentUser;
+        bool isFavorite = false;
+        if (user != null) {
+          final favoriteDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('favorites')
+              .doc(shopId)
+              .get();
+          isFavorite = favoriteDoc.exists;
+        }
+
+        restaurants.add({
+          'latitude': markerLat,
+          'longitude': markerLng,
+          'shopId': shopId,
+          'title': markerData['title'] ?? 'Bilinmeyen Restoran',
+          'snippet': markerData['snippet'] ?? '',
+          'image': shopData?['image'] ?? 'assets/images/rest.jpg',
+          'isOpen': shopData?['isOpen'] ?? false,
+          'orderCount': orderCount,
+          'distance': (distance / 1000).toStringAsFixed(1),
+          'isFavorite': isFavorite, // Favori durumu
+        });
       }
 
-      final distance = Geolocator.distanceBetween(
-        selectedPosition.latitude,
-        selectedPosition.longitude,
-        markerLat,
-        markerLng,
-      );
-
-      if (distance > 1000) {
-        continue;
-      }
-
-      // 🔥 Sipariş sayısını alıyoruz
-      final orderCountQuery = await FirebaseFirestore.instance
-          .collection('carts')
-          .where('shopId', isEqualTo: shopId)
-          .where('status', isEqualTo: 'Onaylandı')
-          .get();
-
-      final int orderCount = orderCountQuery.docs.length;
-
-      final shopDoc = await FirebaseFirestore.instance
-          .collection('shops')
-          .doc(shopId)
-          .get();
-
-      final shopData = shopDoc.data() as Map<String, dynamic>?;
-
-      restaurants.add({
-        'latitude': markerLat,
-        'longitude': markerLng,
-        'shopId': shopId,
-        'title': markerData['title'] ?? 'Bilinmeyen Restoran',
-        'snippet': markerData['snippet'] ?? '',
-        'image': shopData?['image'] ?? 'assets/images/rest.jpg',
-        'isOpen': shopData?['isOpen'] ?? false,
-        'orderCount': orderCount, // 🔥 Sipariş sayısını ekledik
-        'distance': (distance / 1000).toStringAsFixed(1), // KM
+      setState(() {
+        _popularRestaurants = restaurants;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print("Hata: $e");
+      setState(() {
+        _isLoading = false;
       });
     }
-
-    // 🔥 Restoranları sipariş sayısına göre sıralıyoruz (Çok sipariş alan en önde!)
-    restaurants.sort((a, b) => b['orderCount'].compareTo(a['orderCount']));
-
-    // 🚀 **Burada `mounted` kontrolü ekledik**
-    if (!mounted) return;
-
-    setState(() {
-      _popularRestaurants = restaurants;
-      _isLoading = false;
-    });
-  } catch (e) {
-    print("Hata: $e");
-
-    // 🚀 **Burada da `mounted` kontrolü ekledik**
-    if (!mounted) return;
-
-    setState(() {
-      _isLoading = false;
-    });
   }
-}
+
+  Future<void> _toggleFavorite(String shopId, bool isFavorite) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return; // Kullanıcı oturum açmamışsa, işlem yapılmaz
+    }
+
+    final userFavoritesRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites');
+
+    if (isFavorite) {
+      // Favoriye ekle
+      await userFavoritesRef.doc(shopId).set({
+        'shopId': shopId,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Favoriden çıkar
+      await userFavoritesRef.doc(shopId).delete();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +158,12 @@ Future<void> _fetchPopularRestaurants(LatLng selectedPosition) async {
             restaurantLatitude: restaurant['latitude'],
             restaurantLongitude: restaurant['longitude'],
             isOpen: restaurant['isOpen'] ?? false,
-            distance: restaurant['distance'], // Mesafe
+            distance: restaurant['distance'],
+            isFavorite: restaurant['isFavorite'], // Favori durumu
+            onFavoriteToggle: (isFavorite) => _toggleFavorite(
+              restaurant['shopId'],
+              isFavorite,
+            ),
             onTap: () {
               widget.onShopTap(restaurant);
             },
@@ -140,7 +173,6 @@ Future<void> _fetchPopularRestaurants(LatLng selectedPosition) async {
     );
   }
 }
-
 class RestaurantListCard extends StatelessWidget {
   final String restaurantName;
   final String restaurantAddress;
@@ -150,6 +182,8 @@ class RestaurantListCard extends StatelessWidget {
   final double restaurantLongitude;
   final bool isOpen;
   final String distance;
+  final bool isFavorite; // Favori durumu
+  final Function(bool) onFavoriteToggle; // Favori durumu toggle fonksiyonu
   final VoidCallback onTap;
 
   const RestaurantListCard({
@@ -162,6 +196,8 @@ class RestaurantListCard extends StatelessWidget {
     required this.restaurantLongitude,
     required this.onTap,
     required this.isOpen,
+    required this.isFavorite,
+    required this.onFavoriteToggle,
     required this.distance,
   }) : super(key: key);
 
@@ -258,6 +294,16 @@ class RestaurantListCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  IconButton(
+                    icon: Icon(
+                      isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : Colors.grey,
+                    ),
+                    onPressed: () {
+                      onFavoriteToggle(!isFavorite); // Favori durumu toggle et
+                    },
+                  ),
                 ],
               ),
             ),
@@ -268,18 +314,36 @@ class RestaurantListCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    return Container(
-      height: 100,
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(12),
-          topRight: Radius.circular(12),
+    return Stack(
+      children: [
+        Container(
+          height: 100,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+            image: DecorationImage(
+              image: NetworkImage(restaurantImagePath),
+              fit: BoxFit.cover,
+            ),
+          ),
         ),
-        image: DecorationImage(
-          image: NetworkImage(restaurantImagePath),
-          fit: BoxFit.cover,
+        Positioned(
+          top: 5,
+          right: 5,
+          child: IconButton(
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite ? Colors.red : Colors.grey,
+              size: 30
+            ),
+            onPressed: () {
+              onFavoriteToggle(!isFavorite); // Favori durumu toggle et
+            },
+          ),
         ),
-      ),
+      ],
     );
   }
 }

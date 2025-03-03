@@ -1,9 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:yemekye/components/widgets/product_card.dart';
 
-class RestaurantDetails extends StatelessWidget {
+class RestaurantDetails extends StatefulWidget {
   final String shopName;
   final String shopAddress;
   final bool isOpen;
@@ -16,12 +17,19 @@ class RestaurantDetails extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _RestaurantDetailsState createState() => _RestaurantDetailsState();
+}
+
+class _RestaurantDetailsState extends State<RestaurantDetails> {
+  bool isFavorite = false;
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
         future: FirebaseFirestore.instance
             .collection('shops')
-            .where('name', isEqualTo: shopName)
+            .where('name', isEqualTo: widget.shopName)
             .get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -79,7 +87,7 @@ class RestaurantDetails extends StatelessWidget {
                               children: [
                                 /// **Shop Name**
                                 Text(
-                                  shopName,
+                                  widget.shopName,
                                   style: const TextStyle(
                                     fontSize: 28,
                                     fontWeight: FontWeight.bold,
@@ -113,12 +121,26 @@ class RestaurantDetails extends StatelessWidget {
                               ],
                             ),
 
-                            /// **Report Button**
-                            IconButton(
-                              icon: const Icon(Icons.flag, color: Colors.red),
-                              onPressed: () {
-                                _showReportDialog(context, shopDoc.id);
-                              },
+                            /// **Report Button & Favorite Button**
+                            Row(
+                              children: [
+                                /// **Report Button**
+                                IconButton(
+                                  icon: const Icon(Icons.flag, color: Colors.red),
+                                  onPressed: () {
+                                    _showReportDialog(context, shopDoc.id);
+                                  },
+                                ),
+
+                                /// **Favorite Button for Restaurant**
+                                IconButton(
+                                  icon: Icon(
+                                    isFavorite ? Icons.favorite : Icons.favorite_border,
+                                    color: isFavorite ? Colors.red : Colors.black,
+                                  ),
+                                  onPressed: () => _toggleRestaurantFavorite(shopDoc.id), // This is for restaurant
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -158,7 +180,7 @@ class RestaurantDetails extends StatelessWidget {
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  shopAddress,
+                                  widget.shopAddress,
                                   style: const TextStyle(
                                     fontSize: 14,
                                     decoration: TextDecoration.underline,
@@ -240,7 +262,7 @@ class RestaurantDetails extends StatelessWidget {
                   return ProductCard(
                     productId: product.id,
                     productName: product['name'] ?? 'Ürün Adı Yok',
-                    isOpen: isOpen,
+                    isOpen: widget.isOpen,
                     productPrice: (product['price'] as num?)?.toDouble() ?? 0.0,
                     piece: product['piece'] ?? 0,
                     shopId: shopDoc.id,
@@ -254,6 +276,45 @@ class RestaurantDetails extends StatelessWidget {
     );
   }
 
+void _toggleRestaurantFavorite(String shopId) async {
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user == null) {
+    // Kullanıcı oturumu açmamışsa, işlem yapılmaz
+    debugPrint("Kullanıcı oturumu açmamış.");
+    return;
+  }
+
+  final userFavoritesRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('favorites');
+
+  final shopSnapshot = await userFavoritesRef.doc(shopId).get();
+
+  if (shopSnapshot.exists) {
+    // Eğer restoran zaten favorilerdeyse, kaldır
+    await userFavoritesRef.doc(shopId).delete();
+
+    // Yalnızca ikonun durumunu güncelle
+    setState(() {
+      isFavorite = false; // Sadece ikonu güncelle
+    });
+    debugPrint("Restoran favorilerden çıkarıldı.");
+  } else {
+    // Eğer restoran favorilere eklenmemişse, ekle
+    await userFavoritesRef.doc(shopId).set({
+      'shopId': shopId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    // Yalnızca ikonun durumunu güncelle
+    setState(() {
+      isFavorite = true; // Sadece ikonu güncelle
+    });
+    debugPrint("Restoran favorilere eklendi.");
+  }
+}
 
   void _showReportDialog(BuildContext context, String shopId) {
     final TextEditingController topicController = TextEditingController();
@@ -289,8 +350,6 @@ class RestaurantDetails extends StatelessWidget {
       },
     );
   }
-
-
 
   void _reportShop(String shopId, String topic, String message) async {
     final reportCollection = FirebaseFirestore.instance.collection('reports');

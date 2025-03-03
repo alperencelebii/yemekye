@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // HEPSİ YARIÇAPTAKİLERİ GÖSTERİYOR
 
@@ -56,16 +57,28 @@ class _NearbyShopsState extends State<NearbyShops> {
 
         final shopData = shopDoc.data() as Map<String, dynamic>?;
 
+        // Kullanıcı favori durumunu kontrol ediyoruz
+        final user = FirebaseAuth.instance.currentUser;
+        bool isFavorite = false;
+        if (user != null) {
+          final favoriteDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('favorites')
+              .doc(shopId)
+              .get();
+          isFavorite = favoriteDoc.exists;
+        }
+
         filteredMarkers.add({
           'latitude': markerLat,
           'longitude': markerLng,
           'shopId': shopId,
           'title': markerData['title'] ?? 'Bilinmeyen Mağaza',
           'snippet': markerData['snippet'] ?? '',
-          'image':
-              shopData?['image'] ?? 'assets/images/rest.jpg', // Image bilgisi
-          'isOpen':
-              shopData?['isOpen'] ?? false, // Açık/Kapalı durumu (opsiyonel)
+          'image': shopData?['image'] ?? 'assets/images/rest.jpg', // Image bilgisi
+          'isOpen': shopData?['isOpen'] ?? false, // Açık/Kapalı durumu
+          'isFavorite': isFavorite, // Favori durumu ekleniyor
         });
       }
 
@@ -78,6 +91,29 @@ class _NearbyShopsState extends State<NearbyShops> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _toggleFavorite(String shopId, bool isFavorite) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return; // Kullanıcı oturum açmamışsa, işlem yapılmaz
+    }
+
+    final userFavoritesRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('favorites');
+
+    if (isFavorite) {
+      // Favoriye ekle
+      await userFavoritesRef.doc(shopId).set({
+        'shopId': shopId,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Favoriden çıkar
+      await userFavoritesRef.doc(shopId).delete();
     }
   }
 
@@ -103,6 +139,9 @@ class _NearbyShopsState extends State<NearbyShops> {
             shopLatitude: shopData['latitude'],
             shopLongitude: shopData['longitude'],
             isOpen: shopData['isOpen'] ?? false,
+            shopId: shopData['shopId'], // Mağaza ID'si
+            isFavorite: shopData['isFavorite'], // Firebase'den favori durumu alınıyor
+            onFavoriteToggle: (isFavorite) => _toggleFavorite(shopData['shopId'], isFavorite), // Favori durumu güncelleniyor
             onTap: () {
               widget.onShopTap(shopData); // Detay sayfasına yönlendirme
             },
@@ -121,7 +160,10 @@ class nearlistcards extends StatelessWidget {
   final double shopLatitude;
   final double shopLongitude;
   final VoidCallback onTap;
-  final bool isOpen; // Yeni eklenen parametre
+  final bool isOpen; // Yeni parametre
+  final bool isFavorite; // Favori durumu
+  final Function(bool) onFavoriteToggle; // Favori durumu toggle fonksiyonu
+  final String shopId; // Mağaza ID'si
 
   const nearlistcards({
     Key? key,
@@ -132,7 +174,10 @@ class nearlistcards extends StatelessWidget {
     required this.shopLatitude,
     required this.shopLongitude,
     required this.onTap,
-    required this.isOpen, // Yeni parametre
+    required this.isOpen,
+    required this.isFavorite,
+    required this.onFavoriteToggle,
+    required this.shopId,
   }) : super(key: key);
 
   @override
@@ -225,6 +270,18 @@ class nearlistcards extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 10),
+                    IconButton(
+                      icon: Icon(
+                        isFavorite
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.grey,
+                      ),
+                      onPressed: () {
+                        onFavoriteToggle(!isFavorite);
+                      },
                     ),
                   ],
                 ),

@@ -12,12 +12,15 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // Slider değerleri
-  double hygieneRating = 1.0;
-  double freshnessRating = 1.0;
-  double serviceQualityRating = 1.0;
+  Map<String, double> hygieneRatings = {}; 
+  Map<String, double> freshnessRatings = {}; 
+  Map<String, double> serviceQualityRatings = {}; 
 
   // Ortalama puan hesaplamak için bir fonksiyon
-  double get averageRating {
+  double averageRating(String shopId) {
+    double hygieneRating = hygieneRatings[shopId] ?? 1.0;
+    double freshnessRating = freshnessRatings[shopId] ?? 1.0;
+    double serviceQualityRating = serviceQualityRatings[shopId] ?? 1.0;
     return (hygieneRating + freshnessRating + serviceQualityRating) / 3;
   }
 
@@ -52,6 +55,11 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
           return sum + (price * quantity);
         });
 
+        // Puanları her mağaza için map'e kaydediyoruz
+        hygieneRatings[shopId] ??= 1.0;
+        freshnessRatings[shopId] ??= 1.0;
+        serviceQualityRatings[shopId] ??= 1.0;
+
         orders.add({
           'cartId': doc.id,
           'orderNumber': data['orderNumber'] ?? 'N/A',
@@ -73,16 +81,14 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
   Future<void> _submitRatings(String shopId) async {
     try {
       final firestore = FirebaseFirestore.instance;
+      
+      double average = averageRating(shopId);
 
-      // Ortalama puanı hesaplayalım
-      double average = averageRating;
-
-      // Firebase'de shop'a ortalama puanı kaydedelim
       await firestore.collection('shops').doc(shopId).update({
-        'averageRating': average.toDouble(), // double olarak kaydediyoruz
-        'hygieneRating': hygieneRating.toDouble(),
-        'freshnessRating': freshnessRating.toDouble(),
-        'serviceQualityRating': serviceQualityRating.toDouble(),
+        'averageRating': average.toDouble(),
+        'hygieneRating': hygieneRatings[shopId]?.toDouble(),
+        'freshnessRating': freshnessRatings[shopId]?.toDouble(),
+        'serviceQualityRating': serviceQualityRatings[shopId]?.toDouble(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -132,12 +138,6 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
               final shopAddress = order['shopAddress'];
               final products = order['products'] as List<Map<String, dynamic>>;
               final totalPrice = order['totalPrice'] as double;
-              final updatedAt = order['updatedAt'] as Timestamp?;
-
-              String formattedDate = 'N/A';
-              if (updatedAt != null) {
-                formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(updatedAt.toDate());
-              }
 
               return Card(
                 margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 5),
@@ -171,14 +171,6 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                           const Icon(Icons.location_on, size: 18, color: Colors.redAccent),
                           const SizedBox(width: 5),
                           Text(shopAddress, style: const TextStyle(fontSize: 14)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.date_range, size: 18, color: Colors.green),
-                          const SizedBox(width: 5),
-                          Text(formattedDate), // Updated here
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -215,49 +207,49 @@ class _UserPastOrdersScreenState extends State<UserPastOrdersScreen> {
                       // Hijyen puanı
                       Text('Hijyen:'),
                       Slider(
-                        value: hygieneRating,
+                        value: hygieneRatings[shopId] ?? 1.0,
                         min: 1.0,
                         max: 5.0,
                         divisions: 4,
-                        label: hygieneRating.toStringAsFixed(1),
+                        label: hygieneRatings[shopId]?.toStringAsFixed(1),
                         onChanged: (value) {
                           setState(() {
-                            hygieneRating = value;
+                            hygieneRatings[shopId] = value;
                           });
                         },
                       ),
                       // Tazelik puanı
                       Text('Tazelik:'),
                       Slider(
-                        value: freshnessRating,
+                        value: freshnessRatings[shopId] ?? 1.0,
                         min: 1.0,
                         max: 5.0,
                         divisions: 4,
-                        label: freshnessRating.toStringAsFixed(1),
+                        label: freshnessRatings[shopId]?.toStringAsFixed(1),
                         onChanged: (value) {
                           setState(() {
-                            freshnessRating = value;
+                            freshnessRatings[shopId] = value;
                           });
                         },
                       ),
                       // Hizmet kalitesi puanı
                       Text('Hizmet Kalitesi:'),
                       Slider(
-                        value: serviceQualityRating,
+                        value: serviceQualityRatings[shopId] ?? 1.0,
                         min: 1.0,
                         max: 5.0,
                         divisions: 4,
-                        label: serviceQualityRating.toStringAsFixed(1),
+                        label: serviceQualityRatings[shopId]?.toStringAsFixed(1),
                         onChanged: (value) {
                           setState(() {
-                            serviceQualityRating = value;
+                            serviceQualityRatings[shopId] = value;
                           });
                         },
                       ),
                       const SizedBox(height: 10),
                       // Ortalama puanı göster
                       Text(
-                        'Ortalama Puan: ${averageRating.toStringAsFixed(2)}',
+                        'Ortalama Puan: ${averageRating(shopId).toStringAsFixed(2)}',
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
